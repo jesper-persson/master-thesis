@@ -15,6 +15,9 @@
 #include "glm/gtx/euler_angles.hpp"
 
 #include "shader.cpp"
+#include "box.cpp"
+#include "quad.cpp"
+#include "fbo.cpp"
 
 using namespace std;
 
@@ -28,8 +31,8 @@ bool isKeyDown(int key)
     return keysDown[key];
 }
 
-struct Camera
-{
+class Camera {
+public:
     glm::vec3 position = glm::vec3(10.0f, 0, 10.0f);
     glm::vec3 up = glm::vec3(0, 1.0f, 0);
     glm::vec3 forward = glm::normalize(glm::vec3(-1.0f, 0, -1.0f));
@@ -109,46 +112,63 @@ int main()
     glfwMakeContextCurrent(window);
     glewInit();
 
-    float vertices[9] = {0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 0.0f, -1.0f, -1.0f, 0.0f};
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(0);
-
+    float aspectRatio = (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT;
     GLuint shaderProgram = createShaderProgram("shaders/basicVS.glsl", "shaders/basicFS.glsl");
-    glUseProgram(shaderProgram);
-
-    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(10, 10, 1));
-    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-    glm::mat4 modelToWorld = translate * scale;
+    GLuint shaderProgramFBO = createShaderProgram("shaders/basicVS.glsl", "shaders/fboFS.glsl");
     glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.01f, 1000.0f);
+    glm::mat4 orthoUI = glm::ortho(-(float)WINDOW_WIDTH/2.0f,(float)WINDOW_WIDTH/2.0f,-(float)WINDOW_HEIGHT/2.0f,(float)WINDOW_HEIGHT/2.0f,-20.0f,20.0f);
+    glm::mat4 perspectiveFBO = glm::perspectiveFov(1.0f, aspectRatio * 20.0f, aspectRatio * 20.0f, 0.01f, 20.0f);
+    glm::mat4 orthoFBO = glm::ortho(-aspectRatio * 20.0f,aspectRatio * 20.0f,-aspectRatio * 20.0f,aspectRatio * 20.0f,0.0f,10.0f);
+    
+    glm::mat4 unitMatrix = glm::mat4(1.0f);
 
     Camera camera;
+    Box box;
+    box.scale = glm::vec3(4, 4, 4);
+    box.position = glm::vec3(0, 5, 0);
+    box.textureId = loadPNGTexture("images/red.png");
+    Box ground;
+    ground.scale = glm::vec3(30, 1, 30);
+    ground.position = glm::vec3(0, 5, 0);
+    Quad quad;
+    float quadSize = 300;
+    quad.scale = glm::vec3(quadSize, quadSize, 1);
+    quad.position = glm::vec3(WINDOW_WIDTH / 2.0f - quadSize / 2.0f, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f, 0);
+
+    const float textureSize = 1024;
+    FBOWrapper fbo = createFrameBufferSingleTexture(textureSize);
+    FBOWrapper fboDepth = createFBOForDepthTexture(textureSize);
 
     while (!glfwWindowShouldClose(window))
     {
-        glClearColor(0.5, 0.5, 0.5, 1);
+        glClearColor(0.1, 0.5, 0.5, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Update
         float dt = 0.016;
-
         updateCamera(camera, dt);
-
         glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vao);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelToWorld"), 1, GL_FALSE, glm::value_ptr(modelToWorld));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "worldToCamera"), 1, GL_FALSE, glm::value_ptr(worldToCamera));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(perspective));
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // Render to texture
+        glm::mat4 worldToCameraDepth = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+        glViewport(0, 0, textureSize, textureSize);
+        glBindFramebuffer(GL_FRAMEBUFFER, fboDepth.fboId);
+        glClearColor(0.5, 0.1, 0.5, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        box.render(shaderProgram, worldToCameraDepth, orthoFBO);
+        ground.render(shaderProgram, worldToCameraDepth, orthoFBO);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Render to screen
+        ground.render(shaderProgram, worldToCamera, perspective);
+        box.render(shaderProgram, worldToCamera, perspective);
+        quad.textureId = fboDepth.textureId;
+        quad.render(shaderProgram, unitMatrix, orthoUI);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
