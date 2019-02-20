@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 
 #include "glew.h"
 #include "glfw3.h"
@@ -20,8 +21,73 @@ using namespace std;
 const int WINDOW_HEIGHT = 800;
 const int WINDOW_WIDTH = 1200;
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+map<int, bool> keysDown{};
 
+bool isKeyDown(int key)
+{
+    return keysDown[key];
+}
+
+struct Camera
+{
+    glm::vec3 position = glm::vec3(10.0f, 0, 10.0f);
+    glm::vec3 up = glm::vec3(0, 1.0f, 0);
+    glm::vec3 forward = glm::normalize(glm::vec3(-1.0f, 0, -1.0f));
+};
+
+void updateCamera(Camera &camera, float dt)
+{
+    float speed = 1.0f * dt;
+    float rotationSpeed = speed / 8.0f;
+    glm::vec3 left = glm::cross(camera.up, camera.forward);
+    if (isKeyDown(GLFW_KEY_W))
+    {
+        camera.position = camera.position + camera.forward * speed;
+    }
+    if (isKeyDown(GLFW_KEY_S))
+    {
+        camera.position = camera.position - camera.forward * speed;
+    }
+    if (isKeyDown(GLFW_KEY_A))
+    {
+        camera.position = camera.position + left * speed;
+    }
+    if (isKeyDown(GLFW_KEY_D))
+    {
+        camera.position = camera.position - left * speed;
+    }
+    if (isKeyDown(GLFW_KEY_LEFT))
+    {
+        camera.forward = glm::normalize(glm::rotate(camera.forward, rotationSpeed, glm::vec3(0, 1, 0)));
+        camera.up = glm::normalize(glm::rotate(camera.up, rotationSpeed, glm::vec3(0, 1, 0)));
+    }
+    if (isKeyDown(GLFW_KEY_RIGHT))
+    {
+        camera.forward = glm::normalize(glm::rotate(camera.forward, -rotationSpeed, glm::vec3(0, 1, 0)));
+        camera.up = glm::normalize(glm::rotate(camera.up, -rotationSpeed, glm::vec3(0, 1, 0)));
+    }
+    if (isKeyDown(GLFW_KEY_UP))
+    {
+        camera.forward = glm::normalize(glm::rotate(camera.forward, rotationSpeed, left));
+        camera.up = glm::normalize(glm::rotate(camera.up, rotationSpeed, left));
+    }
+    if (isKeyDown(GLFW_KEY_DOWN))
+    {
+        camera.forward = glm::normalize(glm::rotate(camera.forward, -rotationSpeed, left));
+        camera.up = glm::normalize(glm::rotate(camera.up, -rotationSpeed, left));
+    }
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        keysDown[key] = true;
+    }
+    if (action == GLFW_RELEASE)
+    {
+        keysDown[key] = false;
+    }
 }
 
 int main()
@@ -38,7 +104,7 @@ int main()
     {
         cerr << "Failed to create window" << endl;
     }
-    
+
     glfwSetKeyCallback(window, keyCallback);
     glfwMakeContextCurrent(window);
     glewInit();
@@ -62,20 +128,21 @@ int main()
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(10, 10, 1));
     glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
     glm::mat4 modelToWorld = translate * scale;
-    // glm::mat4 worldToCamera = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0, 0)));
     glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.01f, 1000.0f);
 
-    glm::vec3 cameraPosition = glm::vec3(10.0f, 0, 10.0f);
-    glm::vec3 cameraUp = glm::vec3(0, 1.0f, 0);
-    glm::vec3 cameraForward = glm::normalize(glm::vec3(-1.0f, 0, -1.0f));
-    glm::vec3 cameraLookAtPosition = cameraPosition + cameraForward * 10.0f;
+    Camera camera;
 
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.5, 0.5, 0.5, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 worldToCamera = glm::lookAt(cameraPosition, cameraLookAtPosition, cameraUp);
+        float dt = 0.016;
+
+        updateCamera(camera, dt);
+
+        glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
+        glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
 
         glBindBuffer(GL_ARRAY_BUFFER, vao);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelToWorld"), 1, GL_FALSE, glm::value_ptr(modelToWorld));

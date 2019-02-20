@@ -1,5 +1,3 @@
-- Projectionsmatris
-- Rit ut box med projektionsmatris, modelToWorld, worldToCamera?, cameraToProjection?
 - Kunna styra i världen med wasd och rotera med piltangenter
 
 - Box class / struct som vi kan rita ut, enfärgigt
