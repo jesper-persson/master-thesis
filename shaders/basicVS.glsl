@@ -8,14 +8,14 @@ uniform mat4 modelToWorld;
 uniform mat4 worldToCamera;
 uniform mat4 projection;
 
-out vec2 textCoordOutVs;
-out vec3 normalOutVs;
-out vec3 fragPosWorldSpaceOutVs;
+out vec2 texCoordInFS;
+out vec3 normalInFS;
+out vec3 fragPosWorldSpaceInFS;
 
 void main() {
-    normalOutVs = normal;
+    normalInFS = normal;
     vec4 worldCoordinate = modelToWorld * vec4(position, 1);
-    fragPosWorldSpaceOutVs = vec3(worldCoordinate.xyz);
+    fragPosWorldSpaceInFS = vec3(worldCoordinate.xyz);
     gl_Position = projection * worldToCamera * worldCoordinate;
-    textCoordOutVs = texCoord;
+    texCoordInFS = texCoord;
 }

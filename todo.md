@@ -1,2 +1,0 @@
-- Tesselation för att offsetta snö-meshen
-- Tesselation för att öka antalet tringlar

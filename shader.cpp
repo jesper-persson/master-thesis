@@ -20,48 +20,66 @@ string fileContentToString(string pathToFile)
     return buffer.str();
 }
 
-GLuint createShaderProgram(string vertexSourcePath, string fragmentSourcePath)
-{
-    string vertexSource = fileContentToString(vertexSourcePath);
-    string fragmentSource = fileContentToString(fragmentSourcePath);
-    const char *vertexSourceCStr = vertexSource.c_str();
-    const char *fragmentSourceCStr = fragmentSource.c_str();
+GLuint createShader(string sourcePath, GLuint type) {
+    string source = fileContentToString(sourcePath);
+    const char *sourceCStr = source.c_str();
 
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSourceCStr, NULL);
-    glCompileShader(vertexShader);
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &sourceCStr, NULL);
+    glCompileShader(shader);
     // Error check
     GLint isCompiled = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &isCompiled);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
     if (isCompiled == GL_FALSE)
     {
         GLint maxLength = 0;
-        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
         std::vector<GLchar> infoLog(maxLength);
-        glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
+        glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
         for (auto const &value : infoLog)
         {
             cout << value;
         }
     }
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSourceCStr, NULL);
-    glCompileShader(fragmentShader);
+    return shader;
+}
+
+GLuint createShaderProgram(string vertexSourcePath, string tessellationControlSourcePath, string tesselationEvaluationSourcePath, string fragmentSourcePath)
+{
+    GLuint vertexShader = createShader(vertexSourcePath, GL_VERTEX_SHADER);
+    GLuint tessellationControlShader = createShader(tessellationControlSourcePath, GL_TESS_CONTROL_SHADER);
+    GLuint tesselationEvaluationShader = createShader(tesselationEvaluationSourcePath, GL_TESS_EVALUATION_SHADER);
+    GLuint fragmentShader = createShader(fragmentSourcePath, GL_FRAGMENT_SHADER);
+
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, tessellationControlShader);
+    glAttachShader(shaderProgram, tesselationEvaluationShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
     // Error check
-    isCompiled = 0;
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &isCompiled);
-    if (isCompiled == GL_FALSE)
+    GLint isLinked = 0;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
+    if (isLinked == GL_FALSE)
     {
         GLint maxLength = 0;
-        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &maxLength);
-        std::vector<GLchar> infoLog(maxLength);
-        glGetShaderInfoLog(fragmentShader, maxLength, &maxLength, &infoLog[0]);
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
+        vector<GLchar> infoLog(maxLength);
+        glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, &infoLog[0]);
         for (auto const &value : infoLog)
         {
             cout << value;
         }
     }
+
+    return shaderProgram;
+}
+
+GLuint createShaderProgram(string vertexSourcePath, string fragmentSourcePath)
+{
+    GLuint vertexShader = createShader(vertexSourcePath, GL_VERTEX_SHADER);
+    GLuint fragmentShader = createShader(fragmentSourcePath, GL_FRAGMENT_SHADER);
 
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);

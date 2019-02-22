@@ -5,28 +5,28 @@
 
 #include "texture.cpp"
 
-namespace QuadUtils {
+namespace TerrainUtils {
     const float quadSize = 0.5f;
 
     const float vertexCoordinates[] = {
-        -quadSize,  quadSize,  0,
-        quadSize,  quadSize,  0,
-        quadSize, -quadSize,  0,
-        -quadSize, -quadSize,  0
+        -quadSize,  0,  quadSize,
+        quadSize, 0,  quadSize,
+        quadSize, 0,  -quadSize,
+        -quadSize, 0,  -quadSize,
     };
 
     const float textureCoordinates[] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
         0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+        0.0f, 1.0f,
     };
 
     const float normals[] = {
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
     };
 
     unsigned int indices[] {
@@ -76,16 +76,19 @@ namespace QuadUtils {
 
 }
 
-class Quad {
+class Terrain {
 public:
     glm::vec3 position;
     glm::vec3 scale;
     GLuint vao;
     GLuint indexBuffer;
     GLuint textureId;
-    Quad() {
-        vao = QuadUtils::createVAO();
-        indexBuffer = QuadUtils::createIndexBuffer();
+    GLuint heightmap;
+    GLuint normalmap;
+
+    Terrain() {
+        vao = TerrainUtils::createVAO();
+        indexBuffer = TerrainUtils::createIndexBuffer();
         textureId = loadPNGTexture("images/sample.png");
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
@@ -103,11 +106,18 @@ public:
         
         glActiveTexture(GL_TEXTURE0);
 	    glBindTexture(GL_TEXTURE_2D, textureId);
-        glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), GL_TEXTURE0);
+        glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+	    glBindTexture(GL_TEXTURE_2D, heightmap);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightmap"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+	    glBindTexture(GL_TEXTURE_2D, normalmap);
+        glUniform1i(glGetUniformLocation(shaderProgram, "normalmap"), 2);
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_PATCHES, 6, GL_UNSIGNED_INT, 0);
     }
 };
-

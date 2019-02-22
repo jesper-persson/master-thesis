@@ -7,17 +7,41 @@
 #include "lodepng/lodepng.h"
 #include "glew.h"
 
-// Used to get a list of height values from a multi channel png texture.
+GLuint createTextureForHeightmap(int size) {
+	GLuint textureId;
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+
+    const int w = size;
+    const int h = size;
+    const int length = w * h * 4;
+    float pixels[length];
+
+    for (int i = 0; i < length; i += 4) {
+		float h = 0.9f;
+		if (i % 50 == 0) {
+			h = 0.9f;
+		}
+        pixels[i] = h;
+        pixels[i + 1] = h;
+        pixels[i + 2] = h;
+        pixels[i + 3] = h;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, &pixels[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    return textureId;
+}
+
 std::vector<float>* pngTextureToFloatArray(std::string filename) {
-	const char* filenameC = (const char*)filename.c_str();
 	std::vector<unsigned char> image;
 	unsigned width, height;
 	unsigned error = lodepng::decode(image, width, height, filename);
-
-	// Since we only need one color component in heightmaps, we remove the other components
 	std::vector<float>* imageCopy = new std::vector<float>(width * height);
-	int newBufferIndex = 0;
-	int oldBufferIndex = 0;
+	unsigned int newBufferIndex = 0;
+	unsigned int oldBufferIndex = 0;
 	for (newBufferIndex = 0; newBufferIndex < height * width; newBufferIndex++, oldBufferIndex += 4) {
 		(*imageCopy)[newBufferIndex]  = ( (float)image[oldBufferIndex] );
 	}
