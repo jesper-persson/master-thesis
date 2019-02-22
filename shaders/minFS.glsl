@@ -2,6 +2,7 @@
 
 uniform sampler2D texture1;
 uniform sampler2D texture2;
+uniform int textureSize;
 
 in vec2 texCoordInFS;
 

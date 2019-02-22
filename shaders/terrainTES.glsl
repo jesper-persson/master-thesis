@@ -15,6 +15,7 @@ in vec3 normalInTES[];
 out vec3 fragPosWorldSpaceInFS;
 out vec2 texCoordInFS;
 out vec3 normalInFS;
+out vec3 cameraPosWorldSpaceInFS;
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)
 {
@@ -41,4 +42,7 @@ void main()
 	fragPosWorldSpaceInFS.y = sampledHeight * 10.0f;
 
    	gl_Position = projection * worldToCamera * vec4(fragPosWorldSpaceInFS, 1.0);
+
+    mat4 worldToCameraInv = inverse(worldToCamera);
+    cameraPosWorldSpaceInFS = vec3(worldToCameraInv[3][0], worldToCameraInv[3][1], worldToCameraInv[3][2]);
 }

@@ -2,21 +2,22 @@
 
 uniform sampler2D texture1;
 uniform sampler2D texture2; // This is a unary operation, so it doesn't need a second texture
+uniform int textureSize;
 
 in vec2 texCoordInFS;
 
 out vec4 result;
 
 void main() {
-    float textureSize = 100; // Pass as uniform
-    float h = 1/textureSize;
+    float h = 1/float(textureSize);
 
     float x0 = texture(texture1, texCoordInFS + vec2(-h, 0)).r;
     float x1 = texture(texture1, texCoordInFS + vec2(h, 0)).r;
     float y0 = texture(texture1, texCoordInFS + vec2(0, -h)).r;
     float y1 = texture(texture1, texCoordInFS + vec2(0, h)).r;
 
-    float pixelWidth = 0.5; // With of pixel in wodldspace
+    // 30 corresponds to with of terrain
+    float pixelWidth = 30/float(textureSize) * 2; // With of pixel in wodldspace
 
     // X normal normal
     float verticalDiffX = (x1 - x0) * 10;

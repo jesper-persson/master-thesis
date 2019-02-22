@@ -11,6 +11,7 @@ uniform mat4 projection;
 out vec2 texCoordInFS;
 out vec3 normalInFS;
 out vec3 fragPosWorldSpaceInFS;
+out vec3 cameraPosWorldSpaceInFS;
 
 void main() {
     normalInFS = normal;
@@ -18,4 +19,7 @@ void main() {
     fragPosWorldSpaceInFS = vec3(worldCoordinate.xyz);
     gl_Position = projection * worldToCamera * worldCoordinate;
     texCoordInFS = texCoord;
+
+    mat4 worldToCameraInv = inverse(worldToCamera);
+    cameraPosWorldSpaceInFS = vec3(worldToCameraInv[3][0], worldToCameraInv[3][1], worldToCameraInv[3][2]);
 }
