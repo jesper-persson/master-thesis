@@ -8,7 +8,7 @@ public:
     GLuint textureId;
 };
 
-FBOWrapper createFBOForDepthTexture(int textureSize) {
+FBOWrapper createFBOForDepthTexture(int textureWidth, int textureHeight) {
     GLuint fboId = 0;
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
@@ -16,7 +16,7 @@ FBOWrapper createFBOForDepthTexture(int textureSize) {
     GLuint depthTexture;
     glGenTextures(1, &depthTexture);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, textureSize, textureSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, textureWidth, textureHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -36,7 +36,7 @@ FBOWrapper createFBOForDepthTexture(int textureSize) {
     return fbo;
 }
 
-FBOWrapper createFrameBufferSingleTexture(int textureSize) {
+FBOWrapper createFrameBufferSingleTexture(int textureWidth, int textureHeight) {
     GLuint fboId = 0;
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
@@ -46,8 +46,8 @@ FBOWrapper createFrameBufferSingleTexture(int textureSize) {
         glGenTextures(1, &renderedTexture);
         glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
-        const int w = textureSize;
-        const int h = textureSize;
+        const int w = textureWidth;
+        const int h = textureHeight;
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
 
@@ -61,7 +61,7 @@ FBOWrapper createFrameBufferSingleTexture(int textureSize) {
     GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, textureSize, textureSize);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, textureWidth, textureHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};

@@ -15,35 +15,6 @@ public:
 };
 
 namespace TerrainUtils {
-    
-    // const float quadSize = 0.5f;
-
-    // const float vertexCoordinates[] = {
-    //     -quadSize,  0,  quadSize,
-    //     quadSize, 0,  quadSize,
-    //     quadSize, 0,  -quadSize,
-    //     -quadSize, 0,  -quadSize,
-    // };
-
-    // const float textureCoordinates[] = {
-    //     0.0f, 0.0f,
-    //     1.0f, 0.0f,
-    //     1.0f, 1.0f,
-    //     0.0f, 1.0f,
-    // };
-
-    // const float normals[] = {
-    //     0.0f, 1.0f, 0.0f,
-    //     0.0f, 1.0f, 0.0f,
-    //     0.0f, 1.0f, 0.0f,
-    //     0.0f, 1.0f, 0.0f,
-    // };
-
-    // unsigned int indices[] {
-    //     0, 1, 3,
-    //     1, 2, 3,
-    // };
-
     float* getFlatHeightmap(int size) {
         float* heightmap = new float[size * size];
         std::fill_n(heightmap, size * size, 0);
@@ -146,8 +117,16 @@ public:
     GLuint indexBuffer;
     GLuint textureId;
     GLuint heightmap;
+    GLuint normalmapMacro;
     GLuint normalmap;
     int numIndices;
+
+    // SSAO 
+    int numSamples;
+    glm::vec3 *samples;
+    GLuint ssaoMap;
+    GLuint randomTexture;
+    GLuint occlusionMap;
 
     Terrain() {
         int numGridsX = 31;
@@ -179,8 +158,35 @@ public:
         glUniform1i(glGetUniformLocation(shaderProgram, "heightmap"), 1);
 
         glActiveTexture(GL_TEXTURE2);
+	    glBindTexture(GL_TEXTURE_2D, normalmapMacro);
+        glUniform1i(glGetUniformLocation(shaderProgram, "normalMapMacro"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
 	    glBindTexture(GL_TEXTURE_2D, normalmap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "normalmap"), 2);
+        glUniform1i(glGetUniformLocation(shaderProgram, "normalMap"), 3);
+
+        glUniform1i(glGetUniformLocation(shaderProgram, "normalMapRepeat"), 8);
+
+        // SSAO
+        glActiveTexture(GL_TEXTURE4);
+	    glBindTexture(GL_TEXTURE_2D, ssaoMap);
+        glUniform1i(glGetUniformLocation(shaderProgram, "ssaoMap"), 4);
+
+        glActiveTexture(GL_TEXTURE5);
+	    glBindTexture(GL_TEXTURE_2D, randomTexture);
+        glUniform1i(glGetUniformLocation(shaderProgram, "noiseSSAO"), 5);
+
+        // Push kernel
+        for (int i = 0; i < numSamples; i++) {
+            std::string uniform = "kernel[";
+            uniform.append(std::to_string(i));
+            uniform.append("]");
+            glUniform3f(glGetUniformLocation(shaderProgram, uniform.c_str()), samples[i].x, samples[i].y, samples[i].z);
+        }
+
+        glActiveTexture(GL_TEXTURE6);
+	    glBindTexture(GL_TEXTURE_2D, occlusionMap);
+        glUniform1i(glGetUniformLocation(shaderProgram, "occlusionMap"), 6);
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

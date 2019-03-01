@@ -7,6 +7,7 @@ public:
     Footstep() {
         state = 0;
         lengthTravelled = 0;
+        totalTime = 0;
     }
 
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
@@ -15,17 +16,18 @@ public:
     
     void update(float dt) {
         totalTime += dt;
-        
+
+
         if (state == 0) {
             box.position.y = 10 + sin(totalTime);
-            if (box.position.y < 9.1) {
+            if (box.position.y < 9.1f) {
                 state = 1;
             }
         }
 
         if (state == 1) {
             box.position.y = 10 + sin(totalTime);
-            if (box.position.y > 10.9) {
+            if (box.position.y > 10.9f) {
                 state = 2;
                 lengthTravelled = 0;
             }
@@ -39,6 +41,8 @@ public:
                 state = 0;
             }
         }
+
+        // box.position.y = 2;
         
     }
 };
