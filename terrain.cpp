@@ -121,6 +121,9 @@ public:
     GLuint normalmap;
     int numIndices;
 
+    GLuint shadowMap;
+    glm::mat4 depthBiasMVP;
+
     // SSAO 
     int numSamples;
     glm::vec3 *samples;
@@ -187,6 +190,13 @@ public:
         glActiveTexture(GL_TEXTURE6);
 	    glBindTexture(GL_TEXTURE_2D, occlusionMap);
         glUniform1i(glGetUniformLocation(shaderProgram, "occlusionMap"), 6);
+
+        glActiveTexture(GL_TEXTURE7);
+	    glBindTexture(GL_TEXTURE_2D, shadowMap);
+        glUniform1i(glGetUniformLocation(shaderProgram, "shadowMap"), 7);
+        
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "depthBiasMVP"), 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+        
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

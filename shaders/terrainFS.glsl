@@ -1,6 +1,9 @@
 #version 400
 
 uniform sampler2D texture1;
+uniform sampler2D shadowMap;
+vec3 lightPosition = vec3(20, 20, 20);
+vec3 lightDir = normalize(vec3(-1, 1, -1));
 
 uniform sampler2D normalMap;
 uniform sampler2D normalMapMacro;
@@ -16,6 +19,8 @@ in vec3 fragPosWorldSpaceInFS;
 in vec3 fragPosViewSpaceInFS;
 in vec3 cameraPosWorldSpaceInFS;
 in mat3 TBNInFs;
+
+in vec3 shadowCoordInFS;
 
 out vec4 colorOutFs;
 
@@ -39,12 +44,20 @@ void main() {
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase + normalDetail);
 
-    vec3 lightPosition = vec3(20, 20, 20);
+    
     // lightPosition = cameraPosWorldSpaceInFS;
     vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
-    float ambient = 0.7;
+    float ambient = 0.8;
+    float diffuseAmount = 0.3;
+    float specularAmount = 0.1;
+    vec4 color = vec4(0.98, 0.98, 1, 1);
+
+    // If sand
+    ambient = 0.4;
+    diffuseAmount = 0.6;
+    color = vec4(0.68, 0.51, 0.28, 1);
 
     // SSAO
     float occlusionFactor = depthValueForViewSpaceCoord(fragPosViewSpaceInFS);
@@ -53,16 +66,25 @@ void main() {
 
     // Diffuse
     float intensity = dot(normal, directionToLight);
-    intensity = max(0, intensity) * 1 * 0.3 * 1;
+    intensity = max(0, intensity) * diffuseAmount;
 
     // Specular lighting
     vec3 reflectionVector = reflect(-directionToLight, normal);
     float beta = dot(reflectionVector, directionToCamera);
     float cosAngle = max(0.0, dot(directionToCamera, reflectionVector));
     float shininess = 100;
-    float specularCoefficient = pow(cosAngle, shininess) * 0.2 * 1;
+    float specularCoefficient = pow(cosAngle, shininess) * specularAmount;
 
-    vec4 color = texture(texture1, texCoordInFS);
-    color = vec4(0.98, 0.98, 1, 1);
+    // vec4 color = texture(texture1, texCoordInFS);
+    
     colorOutFs = color * (intensity + specularCoefficient + ambient);
+
+    // Shadow
+    float visibility = 1;
+    float bias = 0.005;
+    if (texture(shadowMap, shadowCoordInFS.xy).r < shadowCoordInFS.z - bias) {
+        visibility = 1;
+    }
+
+    colorOutFs *= visibility;
 }

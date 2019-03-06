@@ -7,6 +7,44 @@
 #include "lodepng/lodepng.h"
 #include "glew.h"
 
+GLuint createTextureForPenetration(int size) {
+	GLuint textureId;
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+
+    const int w = size;
+    const int h = size;
+    const int length = w * h * 4;
+    float *pixels = new float[length];
+
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			int i = (y * w + x) * 4;
+
+			float hh = 0.0f;
+			if (x  > 50 && x < 150 && y > 50 && y < 150) {
+				hh = 1.0f;
+			}
+
+			pixels[i] = hh;
+			pixels[i + 1] = hh;
+			pixels[i + 2] = hh;
+			pixels[i + 3] = hh;
+		}
+	}
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, pixels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	delete pixels;
+
+    return textureId;
+}
+
 GLuint createTextureForHeightmap(int size) {
 	GLuint textureId;
     glGenTextures(1, &textureId);
@@ -17,16 +55,21 @@ GLuint createTextureForHeightmap(int size) {
     const int length = w * h * 4;
     float *pixels = new float[length];
 
-    for (int i = 0; i < length; i += 4) {
-		float h = 0.9f;
-		if (i % 50 == 0) {
-			h = 0.9f;
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			int i = (y * w + x) * 4;
+
+			float hh = 0.5f;
+			if (x  > 50 && x < 150 && y > 50 && y < 150) {
+				hh = 0.5f;
+			}
+
+			pixels[i] = hh;
+			pixels[i + 1] = hh;
+			pixels[i + 2] = hh;
+			pixels[i + 3] = hh;
 		}
-        pixels[i] = h;
-        pixels[i + 1] = h;
-        pixels[i + 2] = h;
-        pixels[i + 3] = h;
-    }
+	}
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -25,7 +25,6 @@ void main()
     normalInTES[gl_InvocationID] = normalInTCS[gl_InvocationID];
     fragPosWorldSpaceInTES[gl_InvocationID] = fragPosWorldSpaceInTCS[gl_InvocationID];
 
-
     float h1 = getTessellationLevel(texCoordInTES[0]);
     float h2 = getTessellationLevel(texCoordInTES[1]);
     float h3 = getTessellationLevel(texCoordInTES[2]);

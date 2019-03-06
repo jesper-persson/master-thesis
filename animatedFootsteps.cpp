@@ -17,17 +17,16 @@ public:
     void update(float dt) {
         totalTime += dt;
 
-
         if (state == 0) {
-            box.position.y = 10 + sin(totalTime);
-            if (box.position.y < 9.1f) {
+            box.position.y = 10-4 + sin(totalTime);
+            if (box.position.y < 9.1f-4.0f) {
                 state = 1;
             }
         }
 
         if (state == 1) {
             box.position.y = 10 + sin(totalTime);
-            if (box.position.y > 10.9f) {
+            if (box.position.y > 10.9f-4.0f) {
                 state = 2;
                 lengthTravelled = 0;
             }
@@ -41,8 +40,5 @@ public:
                 state = 0;
             }
         }
-
-        // box.position.y = 2;
-        
     }
 };

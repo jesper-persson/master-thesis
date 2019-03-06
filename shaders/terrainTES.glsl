@@ -8,6 +8,8 @@ uniform sampler2D normalMapMacro;
 uniform mat4 worldToCamera;
 uniform mat4 projection;
 
+uniform mat4 depthBiasMVP; // Light
+
 in vec3 fragPosWorldSpaceInTES[];
 in vec2 texCoordInTES[];
 in vec3 normalInTES[];
@@ -19,6 +21,8 @@ out vec3 normalInFS;
 out vec3 cameraPosWorldSpaceInFS;
 out mat3 TBNInFs;
 out mat4 invTransposeWorldToCamera;
+
+out vec3 shadowCoordInFS;
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)
 {
@@ -51,4 +55,6 @@ void main()
     TBNInFs = mat3(vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0));
 
 	invTransposeWorldToCamera = inverse(transpose(worldToCamera));
+
+	shadowCoordInFS = (depthBiasMVP * vec4(fragPosWorldSpaceInFS.xyz, 1)).xyz; // works as long as model and world space is same for terrain 
 }

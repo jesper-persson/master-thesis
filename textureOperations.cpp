@@ -13,6 +13,9 @@ public:
     Quad quadVAO;
     FBOWrapper fbo;
 
+    TextureOperation() {
+
+    }
     TextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram) {
         this->textureWidth = textureWidth;
         this->textureHeight = textureHeight;
@@ -72,17 +75,21 @@ public:
     int timesRepeat;
     FBOWrapper extraFBO;
 
+    PingPongTextureOperation() {
+
+    }
+    
     PingPongTextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram, int timesRepeat) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
         this->timesRepeat = timesRepeat;
         extraFBO = createFrameBufferSingleTexture(textureWidth, textureHeight);
     }
 
-    // Only the first textureInput is used
+    // The first texture is pong ponged
     void execute(GLuint textureInput1, GLuint textureInput2) override {
         FBOWrapper fboOrig = fbo;
         GLuint nextInputTexture = textureInput1; 
         for (int i = 0; i < timesRepeat; i++) {
-            TextureOperation::execute(nextInputTexture, 0);
+            TextureOperation::execute(nextInputTexture, textureInput2);
             if (fbo.fboId == fboOrig.fboId) {
                 fbo = extraFBO;
                 nextInputTexture = fboOrig.textureId;

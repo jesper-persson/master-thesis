@@ -18,8 +18,8 @@
 const int WINDOW_HEIGHT = 1200;
 const int WINDOW_WIDTH = 1800;
 const float textureSizeSnowHeightmap = 300;
-const int occlusionTextureWidth = WINDOW_WIDTH / 1.0;
-const int occlusionTextureHeight = WINDOW_HEIGHT / 1.0;
+const int occlusionTextureWidth = WINDOW_WIDTH / 10.0;
+const int occlusionTextureHeight = WINDOW_HEIGHT / 10.0;
 
 #include "texture.cpp"
 #include "shader.cpp"
@@ -30,10 +30,9 @@ const int occlusionTextureHeight = WINDOW_HEIGHT / 1.0;
 #include "animatedFootsteps.cpp"
 #include "ssao.cpp"
 #include "textureOperations.cpp"
+#include "erosion.cpp"
 
 using namespace std;
-
-
 
 map<int, bool> keysDown{};
 
@@ -140,22 +139,25 @@ int main()
     GLuint shaderProgramLowpass = createShaderProgram("shaders/basicVS.glsl", "shaders/blurFS.glsl");
     GLuint shaderProgramPixelMin = createShaderProgram("shaders/basicVS.glsl", "shaders/minFS.glsl");
     GLuint shaderProgramCalcNormals = createShaderProgram("shaders/basicVS.glsl", "shaders/calcNormalFS.glsl");
+    GLuint shaderProgramSubtract = createShaderProgram("shaders/basicVS.glsl", "shaders/subtractFS.glsl");
+    GLuint shaderProgramAdd = createShaderProgram("shaders/basicVS.glsl", "shaders/addFS.glsl");
 
     glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 1.0f, 100.0f);
     glm::mat4 orthoUI = glm::ortho(-(float)WINDOW_WIDTH/2.0f,(float)WINDOW_WIDTH/2.0f,-(float)WINDOW_HEIGHT/2.0f,(float)WINDOW_HEIGHT/2.0f,-20.0f,20.0f);
     glm::mat4 orthoFBO = glm::ortho(-1 * 15.0f,1 * 15.0f,-1 * 15.0f,1 * 15.0f,0.0f,10.0f);
+    glm::mat4 orthoFBOLight = glm::ortho(-1 * 30.0f,1 * 30.0f,-1 * 30.0f,1 * 30.0f,0.0f,80.0f);
     glm::mat4 unitMatrix = glm::mat4(1.0f);
 
     Camera camera;
     Box box;
     box.scale = glm::vec3(2, 4, 2);
-    box.position = glm::vec3(0, 10.5f, 0);
+    box.position = glm::vec3(0, 0 +10.5f-4.0f, 0);
     box.textureId = loadPNGTexture("images/red.png");
     box.normalMap = loadPNGTexture("images/normalmap3.png");
     box.useNormalMapping = true;
     Box box2;
     box2.scale = glm::vec3(2, 2, 2);
-    box2.position = glm::vec3(-6.5f, 9.0f, 2.0f);
+    box2.position = glm::vec3(-6.5f, 0.5f+9.0f-4.0f, 2.0f);
     box2.textureId = loadPNGTexture("images/red.png");
     box2.normalMap = loadPNGTexture("images/normalmap3.png");
     box2.useNormalMapping = true;
@@ -169,20 +171,30 @@ int main()
     float quadSize = 300;
     Quad quad;
     quad.scale = glm::vec3(quadSize, quadSize, 1);
-    quad.position = glm::vec3(WINDOW_WIDTH / 2.0f - quadSize / 2.0f, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f, 0);
+    quad.position = glm::vec3(WINDOW_WIDTH / 2.0f - quadSize / 2.0f - 20, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f + 20, 0);
     Quad quadLL;
     quadLL.scale = glm::vec3(quadSize, quadSize, 1);
-    quadLL.position = glm::vec3(-WINDOW_WIDTH / 2.0f + quadSize / 2.0f, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f, 0);
+    quadLL.position = glm::vec3(-WINDOW_WIDTH / 2.0f + quadSize / 2.0f + 10, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f + 10, 0);
 
     FBOWrapper fboDepthSSAO = createFBOForDepthTexture(occlusionTextureWidth, occlusionTextureHeight);
     FBOWrapper fboOcclusionStep = createFrameBufferSingleTexture(occlusionTextureWidth, occlusionTextureHeight);
     FBOWrapper fboSnowCoverDepth = createFBOForDepthTexture(textureSizeSnowHeightmap, textureSizeSnowHeightmap);
+    FBOWrapper fboLight = createFBOForDepthTexture(textureSizeSnowHeightmap, textureSizeSnowHeightmap);
+
+    ground.shadowMap = fboLight.textureId;
+    glm::mat4 biasMatrix(0.5, 0.0, 0.0, 0.0, 
+                         0.0, 0.5, 0.0, 0.0,
+                         0.0, 0.0, 0.5, 0.0,
+                         0.5, 0.5, 0.5, 1.0
+                        );
 
     PingPongTextureOperation blurOcclusion = PingPongTextureOperation(occlusionTextureHeight, occlusionTextureHeight, shaderProgramLowpass, 4);
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4);
     TextureOperation calcNormals = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCalcNormals);
     TextureOperation minTextureOperation1 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramPixelMin);
     TextureOperation minTextureOperation2 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramPixelMin);
+    TextureOperation subtract = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramSubtract);
+    TextureOperation addTextureOperation = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramAdd);
 
     // SSAO stuff
     int kernelSize = 64; // Change kernel size in shader too
@@ -208,6 +220,8 @@ int main()
     footstep.box.numSamples = kernelSize;
     footstep.box.randomTexture = noiseTexture;
 
+    Erosion erosion = initializeErosion(textureSizeSnowHeightmap);
+  
     int i = 0;
     double previousTimeFPS = glfwGetTime();
     double previousTime = glfwGetTime();
@@ -218,6 +232,7 @@ int main()
     {
         glClearColor(0.1, 0.5, 0.5, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         // Calculate deltaTime and FPS
         double currentTime = glfwGetTime();
@@ -236,11 +251,30 @@ int main()
         updateCamera(camera, dt);
         glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
-        footstep.update(dt);
-        box.position.y = 10.2f + 2 * sin(i*0.01f);
+        footstep.update(dt*0.00000001f);
+        box.position.y = 6.2f + 2 * sin(i*0.01f);
         box.position.x = 4 + 6 * cos(i*0.01f);
         box.position.z = 2 + 6 * sin(i*0.01f);
         box.rotation = glm::rotate(glm::mat4(1.0f), i * 0.001f, glm::vec3(0.0f, 1.0f, 0.0f));
+
+         if (isKeyDown(GLFW_KEY_T)) {
+             box2.position.z += 5 * dt;
+         }
+
+        // Render shadow map
+        glm::mat4 worldToCameraLight = glm::lookAt(glm::vec3(20, 20, 20), glm::vec3(0, 0, 0), glm::normalize(glm::vec3(-1, 1, -1)));
+        glViewport(0, 0, textureSizeSnowHeightmap, textureSizeSnowHeightmap);
+        glBindFramebuffer(GL_FRAMEBUFFER, fboLight.fboId);
+        glClearColor(0.5, 0.1, 0.5, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        box.render(shaderProgram, worldToCameraLight, orthoFBOLight);
+        box2.render(shaderProgram, worldToCameraLight, orthoFBOLight);
+        footstep.render(shaderProgram, worldToCameraLight, orthoFBOLight);
+        ground.render(shaderProgramTerrain, worldToCameraLight, orthoFBOLight);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glm::mat4 depthBiasMVP = biasMatrix * orthoFBOLight * worldToCameraLight;
+        ground.depthBiasMVP = depthBiasMVP;
 
         // Render snow cover depth map
         glm::mat4 worldToCameraDepth = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
@@ -255,13 +289,29 @@ int main()
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-         // Calculate new height map
+        // Calculate new height map
         TextureOperation to = minTextureOperation1;
         if (to.fbo.textureId == ground.heightmap) {
             to = minTextureOperation2;
         } 
         to.execute(ground.heightmap, fboSnowCoverDepth.textureId);
-        ground.heightmap = to.getTextureResult();
+
+        // Erosion
+        const bool useErosion = true;
+        subtract.execute(to.getTextureResult(), ground.heightmap);
+        erosion.penetrationTexture = subtract.getTextureResult();
+        // erosion.penetrationTexture = createTextureForPenetration(textureSizeSnowHeightmap); // subtract.getTextureResult();
+        buildDistanceMap(erosion);
+        runDistribution(erosion);
+        addTextureOperation.execute(to.getTextureResult(), erosion.distributedPenetratitionTexture);
+        if (useErosion) {
+            ground.heightmap = addTextureOperation.getTextureResult();
+        } else {
+            ground.heightmap = to.getTextureResult();
+        }
+
+        GLuint obsticleMap = fboSnowCoverDepth.textureId;
+        ground.heightmap = runErosion(erosion, ground.heightmap, obsticleMap);
 
         calcNormals.execute(ground.heightmap, 0);
         blurSnowHeightmap.execute(calcNormals.getTextureResult(), 0);
@@ -299,7 +349,7 @@ int main()
         box2.occlusionMap = blurOcclusion.getTextureResult();
         footstep.box.occlusionMap = blurOcclusion.getTextureResult();
 
-        // Render to screen
+        // // Render to screen
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
         ground.render(shaderProgramTerrain, worldToCamera, perspective);
@@ -308,10 +358,13 @@ int main()
         footstep.render(shaderProgram, worldToCamera, perspective);
         
         // Render helper quads
-        quad.textureId = minTextureOperation1.getTextureResult();
+        // quad.textureId = minTextureOperation1.getTextureResult();
         // quad.textureId = ground.normalmapMacro;
+        // quad.textureId = erosion.penetrationTexture;
+        quad.textureId = erosion.distanceMap;
         quad.render(shaderProgramQuad, unitMatrix, orthoUI);
-        quadLL.textureId = fboOcclusionStep.textureId;
+        quadLL.textureId = obsticleMap;//.getTextureResult();
+        // quadLL.textureId = fboOcclusionStep.textureId;
         // quadLL.textureId = fboSnowCoverDepth.textureId;
         quadLL.render(shaderProgramQuad, unitMatrix, orthoUI);
 
