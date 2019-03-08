@@ -4,12 +4,14 @@
  * This shader produces the precondition needed for jumpFloodFS
  */
 
-uniform sampler2D texture1; // Penetration texture (0 for non penetration, non-zero otherwise)
-uniform sampler2D texture2;
+uniform sampler2D texture1; // Penetration texture (0 for non penetration, negative otherwise)
+uniform sampler2D texture2; // Prev penetratin texture [0, -1]
 uniform int textureWidth;
 
 in vec2 texCoordInFS;
 
+// (r,g) is coordinate to closest 0. B is 0 if we dont displace. 
+// alpha is wheter we are an obsticle
 out vec4 colorFS;
 
 vec2 texCoordToCoordinate(vec2 texCoord) {
@@ -17,15 +19,19 @@ vec2 texCoordToCoordinate(vec2 texCoord) {
 }
 
 void main() {
-    float penetration = texture(texture1, texCoordInFS).r;
+    float penetration = abs(texture(texture1, texCoordInFS).r);
+    float prevPenetration = abs(texture(texture2, texCoordInFS).r);
 
-    if (penetration > 0.0001) {
-        colorFS = vec4(0, 0, -1, 1);
-        // colorFS = vec4(1, 0, 0, 1);
-    } else {
-        colorFS = vec4(texCoordToCoordinate(texCoordInFS).rg, 0, 1);
-        // colorFS = vec4(1, 1, 1, 1);
+    bool isPenetrating = penetration > 0.0001;
+    bool wasPenetrating = prevPenetration < 0.99; // < 0.1 check for initial black texture
+
+    if (isPenetrating && !wasPenetrating) {
+        colorFS = vec4(0, 0, -1, 0);
+    } 
+    else if (wasPenetrating) {
+        colorFS = vec4(0, 0, 0, 1); // the 1 indicates obsticle
     }
-
-    // colorFS = vec4(penetration,penetration,penetration, 1);
+    else if (!isPenetrating && !wasPenetrating) {
+        colorFS = vec4(texCoordToCoordinate(texCoordInFS).rg, 0, 0);
+    }
 }

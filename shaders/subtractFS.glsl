@@ -10,5 +10,5 @@ out vec4 result;
 void main() {
     vec4 color1 = texture(texture1, texCoordInFS);
     vec4 color2 = texture(texture2, texCoordInFS);
-    result = abs(color1 - color2);
+    result = (color1 - color2);
 }

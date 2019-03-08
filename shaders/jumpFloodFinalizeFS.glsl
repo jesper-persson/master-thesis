@@ -14,7 +14,7 @@ const int offsetSize = 8;
 vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 void main() {
-    float currentContour = texture(texture1, texCoordInFS).b;
+    vec4 currentContour = texture(texture1, texCoordInFS);
     float step = float(1)/textureWidth;
 
     float numNeighboursWithLessDistance = 0;
@@ -24,11 +24,18 @@ void main() {
             continue;
         }
 
-        float contour = texture(texture1, newTexCoord).b;
-        if (contour < currentContour) {
+        vec4 contour = texture(texture1, newTexCoord);
+        if (contour.b < currentContour.b && contour.w < 0.1) {
             numNeighboursWithLessDistance++;
         }
     }
 
-    colorFS = vec4(currentContour, numNeighboursWithLessDistance, 1, 1);
+    if (currentContour.w > 0.1) {
+        currentContour.b = 100000;
+    }
+
+    colorFS = vec4(currentContour.b, numNeighboursWithLessDistance, 0, 1);
+
+    // Visualization
+    // colorFS = vec4(currentContour, currentContour, currentContour, 1) / 20.0;
 }

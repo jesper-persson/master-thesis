@@ -35,7 +35,7 @@ float slope(float h1, float h2) {
 
 void main() {
     float step = float(1)/textureWidth;
-    float slopeThreshold = 0.3; //change in erosionFS shader also
+    float slopeThreshold = 0.09; //change in erosionFS shader also
     float roughness = 1/1;
 
     float heights[offsetSize];
@@ -77,11 +77,10 @@ void main() {
 
     if (numWithTooHighSlope > 0.1 && obsticleFragmentCurrent >= 0.99) {
         avgHeightDiff /= (numWithTooHighSlope);
-        avgHeightDiff *= roughness * 0.8;
+        avgHeightDiff *= roughness * 0.2;
         totalToRemove = avgHeightDiff;
         neighbourQuota = totalToRemove / numWithTooHighSlope;
     }
-
 
     colorFS = vec4(totalToRemove,neighbourQuota,slopeSum,obsticleFragmentCurrent);
 }

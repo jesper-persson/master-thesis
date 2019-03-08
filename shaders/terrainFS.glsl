@@ -57,6 +57,7 @@ void main() {
     // If sand
     ambient = 0.4;
     diffuseAmount = 0.6;
+    specularAmount = 0.01;
     color = vec4(0.68, 0.51, 0.28, 1);
 
     // SSAO
@@ -76,7 +77,6 @@ void main() {
     float specularCoefficient = pow(cosAngle, shininess) * specularAmount;
 
     // vec4 color = texture(texture1, texCoordInFS);
-    
     colorOutFs = color * (intensity + specularCoefficient + ambient);
 
     // Shadow

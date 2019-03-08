@@ -21,6 +21,25 @@ public:
     }
 };
 
+class DistributeToContourVelocity : public PingPongTextureOperation {
+public:
+    glm::vec3 velocity;
+
+    DistributeToContourVelocity() {
+
+    }
+
+    DistributeToContourVelocity(GLuint textureWidth, GLuint textureHeight, GLuint program, int numRepeat)
+    : PingPongTextureOperation(textureWidth, textureHeight, program, numRepeat) {
+        velocity = glm::vec3(0, 0, 0);
+    }
+
+    void bindUniforms() override {
+        glUniform3f(glGetUniformLocation(shaderProgram, "velocity"), velocity.x, velocity.y, velocity.z);
+        PingPongTextureOperation::bindUniforms();
+    }
+};
+
 class Erosion
 {
   public:
@@ -31,6 +50,7 @@ class Erosion
     JumpStepOperation jumpFlood;
     TextureOperation toDistanceMap;
     PingPongTextureOperation distribute;
+    DistributeToContourVelocity distributeWithVelocity;
 
     // 0 indicates no penetration, non zero indicates penetration
     GLuint penetrationTexture;
@@ -39,6 +59,10 @@ class Erosion
     GLuint distributedPenetratitionTexture;
 
     int textureSize;
+
+    GLuint velocityMap;
+
+    TextureOperation setAllChannels; // Get rid off
 
     GLuint distanceMap;
 
@@ -56,6 +80,8 @@ Erosion initializeErosion(int textureSize)
     GLuint shaderProgram4 = createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl");
     GLuint shaderProgram5 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl");
     GLuint shaderProgram6 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl");
+    GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
+    GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setAllChannels.glsl");
     
 
     Erosion erosion;
@@ -82,7 +108,21 @@ Erosion initializeErosion(int textureSize)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.distribute = PingPongTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram4, 30);
+    erosion.distribute = PingPongTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram4, 50);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    erosion.distributeWithVelocity = DistributeToContourVelocity(erosion.textureSize, erosion.textureSize, shaderProgram7, 20);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    erosion.setAllChannels = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram8);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -113,9 +153,9 @@ Erosion initializeErosion(int textureSize)
     return erosion;
 }
 
-void buildDistanceMap(Erosion &erosion) {
+void buildDistanceMap(Erosion &erosion, GLuint prevPenetration) {
     // Given a penetration texture, and a initial 0 texture, set precondition
-    erosion.init.execute(erosion.penetrationTexture, 0);
+    erosion.init.execute(erosion.penetrationTexture, prevPenetration);
 
     // ping pong precondition texture with jump flood
     erosion.jumpFlood.passIndex = 0;
@@ -128,29 +168,20 @@ void buildDistanceMap(Erosion &erosion) {
 
 void runDistribution(Erosion &erosion)
 {
-    // Distribute one level
+    // Distribute one level (USING result from jumpflood)
     erosion.distribute.execute(erosion.penetrationTexture, erosion.distanceMap);
     erosion.distributedPenetratitionTexture = erosion.distribute.getTextureResult();
+
+    // Distribute with velocity
+    // erosion.distributeWithVelocity.velocity = glm::vec3(0, 0, 1);
+    // erosion.distributeWithVelocity.execute(erosion.penetrationTexture, erosion.velocityMap);
+    // erosion.setAllChannels.execute(erosion.distributeWithVelocity.getTextureResult(), 0);
+    // erosion.distributedPenetratitionTexture = erosion.setAllChannels.getTextureResult();
 }
 
 // Performs the last erosion step (even out high slopes)
 GLuint runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap) {
-    // int timesToRun = 100;
-    // for (int i = 0; i < timesToRun; i++) {
-    //     erosion.calcAvgHeight.execute(erosion.distributedPenetratitionTexture, 0);
-    //     GLuint avgHeightTexture = erosion.calcAvgHeight.getTextureResult();
-
-    //     TextureOperation to = erosion.erosionStep2;
-    //     if (i % 2 == 0) {
-    //         to = erosion.erosionStep1;
-    //     }
-    //     to.execute(erosion.distributedPenetratitionTexture, avgHeightTexture);
-    //     GLuint erodedTexture = to.getTextureResult();
-
-    //     erosion.distributedPenetratitionTexture = erodedTexture;
-    // }
-
-    int timesToRun = 1;
+    int timesToRun = 25;
     for (int i = 0; i < timesToRun; i++) {
         erosion.calcAvgHeight.execute(heightmap, obsticleMap);
         GLuint avgHeightTexture = erosion.calcAvgHeight.getTextureResult();

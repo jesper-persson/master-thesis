@@ -29,13 +29,12 @@ float slope(float h1, float h2) {
      */
     float terrainSize = 30;
     float d = terrainSize/float(textureWidth);
-    // return atan(h1 - h2) / d;
     return atan(h2*1 - h1*1) / d;
 }
 
 void main() {
     float step = float(1)/textureWidth;
-    float slopeThreshold = 0.3; // Change ing calcAvgHeight shader too
+    float slopeThreshold = 0.09; // Change ing calcAvgHeight shader too
    
     float currentH = texture(texture1, texCoordInFS).r;
     vec4 data = texture(texture2, texCoordInFS);

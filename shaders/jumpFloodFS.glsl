@@ -39,7 +39,8 @@ void main() {
                 vec2 newTexCoord = texCoordInFS + vec2(step * offset * x, step * offset * y);
                 vec4 neighbour = texture(texture1, newTexCoord);
 
-                if (neighbour.z < -0.1 || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y < 0 || newTexCoord.y > 1) {
+                // neighbour.w  > 0.1 checks for obsticle
+                if (neighbour.w > 0.1 || neighbour.z < -0.1 || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y < 0 || newTexCoord.y > 1) {
                     continue;
                 }
 
