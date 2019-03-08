@@ -164,8 +164,8 @@ int main()
     box.normalMap = loadPNGTexture("images/normalmap3.png");
     box.useNormalMapping = true;
     Box box2;
-    box2.scale = glm::vec3(2, 2, 2);
-    box2.position = glm::vec3(-6.5f, 0.0f+9.0f-4.0f, 2.0f);
+    box2.scale = glm::vec3(6, 2, 0.2f);
+    box2.position = glm::vec3(-10.5f, 0.0f+9.0f-4.0f, 4.0f);
     box2.textureId = loadPNGTexture("images/red.png");
     box2.normalMap = loadPNGTexture("images/normalmap3.png");
     box2.useNormalMapping = true;
@@ -264,7 +264,7 @@ int main()
         updateCamera(camera, dt);
         glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
-        footstep.update(dt*0.00000001f);
+        footstep.update(dt*1.0f);
         // box.position.y = 6.2f + 2 * sin(i*0.01f);
         // box.position.x = 4 + 6 * cos(i*0.01f);
         // box.position.z = 2 + 6 * sin(i*0.01f);
@@ -283,8 +283,10 @@ int main()
         box.position.z = 2 + 6 * sinV;
 
         if (isKeyPressed(GLFW_KEY_T)) {
-            box2.position.x += 20 * dt;
+            box2.position.y -= 1 * dt;
         }
+        box2.rotation = glm::rotate(glm::mat4(1.0f), i * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
+
 
         prevObsticleMap = obsticleMap;
 

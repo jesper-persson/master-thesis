@@ -28,6 +28,9 @@ void main() {
     if (isPenetrating && !wasPenetrating) {
         colorFS = vec4(0, 0, -1, 0);
     } 
+    else if (isPenetrating && wasPenetrating && penetration < prevPenetration) { // if we come from above
+         colorFS = vec4(0, 0, -1, 0);
+    }
     else if (wasPenetrating) {
         colorFS = vec4(0, 0, 0, 1); // the 1 indicates obsticle
     }
