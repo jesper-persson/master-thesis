@@ -13,6 +13,11 @@ uniform sampler2D texture2;
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square
 
+uniform int activeWidth; // Allows to simulate part of texture
+uniform int activeHeight; // Allows to simulate part of texture
+uniform int activeCenterX;
+uniform int activeCenterY;
+
 in vec2 texCoordInFS;
 
 out vec4 colorFS;
@@ -34,6 +39,11 @@ float slope(float h1, float h2) {
 }
 
 void main() {
+    float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float minTexCoordY = (activeCenterY - activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+    float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+
     float step = float(1)/textureWidth;
     float slopeThreshold = 0.09; //change in erosionFS shader also
     float roughness = 1/1;
@@ -59,7 +69,10 @@ void main() {
         if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
             continue;
         }
-        
+        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
+            continue;
+        }
+
         float h = texture(texture1, newTexCoord).r;
 
         heights[i] = h;
@@ -82,5 +95,5 @@ void main() {
         neighbourQuota = totalToRemove / numWithTooHighSlope;
     }
 
-    colorFS = vec4(totalToRemove,neighbourQuota,slopeSum,obsticleFragmentCurrent);
+    colorFS = vec4(totalToRemove,neighbourQuota,currentH,obsticleFragmentCurrent);
 }

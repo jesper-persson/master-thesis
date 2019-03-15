@@ -13,6 +13,14 @@ public:
     Quad quadVAO;
     FBOWrapper fbo;
 
+    bool doClear;
+
+    // Offset for only uppdating part of texture
+    float centerX;
+    float centerY;
+    float width;
+    float height;
+
     TextureOperation() {
 
     }
@@ -20,15 +28,22 @@ public:
         this->textureWidth = textureWidth;
         this->textureHeight = textureHeight;
         this->shaderProgram = shaderProgram;
-        this->quadVAO = Quad();
+    
+        centerX = 0;//textureWidth/2.0f;
+        centerY = 0;//textureHeight/2.0f;
+        width = textureWidth;
+        height = textureHeight;
 
         fbo = createFrameBufferSingleTexture(textureWidth, textureHeight);
+
+        doClear = true;
     }
 
     virtual void bindUniforms() {
-        glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(2, 2, 1));
-        glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-        glm::mat4 modelToWorld = translate * scale;
+        glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(textureWidth, textureHeight, 1));
+        glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(-centerX, -centerY, 0));
+        glm::mat4 scale2 = glm::scale(glm::mat4(1.0f), glm::vec3(1/(width/2.0f), 1/(height/2.0f), 1));
+        glm::mat4 modelToWorld = scale2 * translate * scale;
         glm::mat4 identity = glm::mat4(1.0f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelToWorld"), 1, GL_FALSE, glm::value_ptr(modelToWorld));
@@ -40,7 +55,7 @@ public:
     }
 
     virtual void execute(GLuint textureInput1, GLuint textureInput2) {
-        glViewport(0, 0, textureWidth, textureHeight);
+        glViewport(centerX - width/2.0f + textureWidth/2.0f, centerY - height/2.0f + textureHeight/2.0f, width, height);
         glUseProgram(shaderProgram);
         
         this->bindUniforms();
@@ -54,8 +69,11 @@ public:
         glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1);
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.fboId);
-        glClearColor(0.5, 0.1, 0.5, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0, 0.1, 0.5, 1);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        if (doClear) {
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
 
         glBindVertexArray(quadVAO.vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadVAO.indexBuffer);

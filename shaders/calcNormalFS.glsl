@@ -24,14 +24,14 @@ void main() {
 
     // X normal normal
     float verticalDiffX = (x1 - x0) * 10;
-    float horizontalDiffX = pixelWidthX * 1;
+    float horizontalDiffX = pixelWidthX * 2;
     vec3 horDir = vec3(horizontalDiffX, 0, 0);
     vec3 verDir = vec3(0, verticalDiffX, 0);
     vec3 xNormal = horDir + verDir;
 
     // Y normal normal
     float verticalDiffY = y1 - y0;
-    float horizontalDiffY = pixelWidthY * 1;
+    float horizontalDiffY = pixelWidthY * 2;
     vec3 horDir2 = vec3(0, 0, horizontalDiffY);
     vec3 verDir2 = vec3(0, verticalDiffY, 0);
     vec3 yNormal = horDir2 + verDir2;

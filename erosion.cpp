@@ -1,6 +1,32 @@
 #include "textureOperations.cpp"
 #include "shader.cpp"
 
+class SubTextureOperation : public TextureOperation {
+    // In pixels.
+public:
+    int activeWidth;
+    int activeHeight;
+    int activeCenterX;
+    int activeCenterY;
+
+    SubTextureOperation() {
+
+    }
+
+    SubTextureOperation(GLuint textureWidth, GLuint textureHeight, GLuint program)
+    : TextureOperation(textureWidth, textureHeight, program) {
+
+    }
+
+    void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeHeight"), activeHeight);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeWidth"), activeWidth);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeCenterX"), activeCenterX);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeCenterY"), activeCenterY);
+        TextureOperation::bindUniforms();
+    }
+};
+
 class JumpStepOperation : public PingPongTextureOperation {
 public:
     int passIndex;
@@ -66,10 +92,12 @@ class Erosion
 
     GLuint distanceMap;
 
+    TextureOperation copyOperation;
+
     // Step 4 (erosion)
-    TextureOperation calcAvgHeight;
-    TextureOperation erosionStep1;
-    TextureOperation erosionStep2; // For ping pong
+    SubTextureOperation calcAvgHeight;
+    SubTextureOperation erosionStep1;
+    SubTextureOperation erosionStep2; // For ping pong
 };
 
 Erosion initializeErosion(int textureSize)
@@ -82,6 +110,7 @@ Erosion initializeErosion(int textureSize)
     GLuint shaderProgram6 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl");
     GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
     GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setAllChannels.glsl");
+    GLuint shaderProgram9 = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
     
 
     Erosion erosion;
@@ -129,21 +158,23 @@ Erosion initializeErosion(int textureSize)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.calcAvgHeight = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram5);
+    erosion.calcAvgHeight = SubTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram5);
+    
+    erosion.copyOperation = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram9);
     
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.erosionStep1 = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram6);
+    erosion.erosionStep1 = SubTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram6);
     
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
 
-    erosion.erosionStep2 = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram6);
+    erosion.erosionStep2 = SubTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram6);
     
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -181,14 +212,56 @@ void runDistribution(Erosion &erosion)
 
 // Performs the last erosion step (even out high slopes)
 GLuint runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap) {
-    int timesToRun = 25;
+    int timesToRun = 11; // must be odd
+
+    float centerX = 0;
+    float centerY = 0;
+
+    float width = 100;
+    float height = 100;
+
+    erosion.calcAvgHeight.centerX = centerX;
+    erosion.calcAvgHeight.centerY = centerY;
+    erosion.erosionStep1.centerX = centerX;
+    erosion.erosionStep1.centerY = centerY;
+    erosion.erosionStep2.centerX = centerX;
+    erosion.erosionStep2.centerY = centerY;
+
+    erosion.calcAvgHeight.width = width;
+    erosion.calcAvgHeight.height = height;
+    erosion.calcAvgHeight.activeWidth = width;
+    erosion.calcAvgHeight.activeHeight = height;
+    erosion.calcAvgHeight.activeCenterX = centerX;
+    erosion.calcAvgHeight.activeCenterY = centerY;
+
+    erosion.erosionStep1.width = width;
+    erosion.erosionStep1.height = height;
+    erosion.erosionStep1.activeWidth = width;
+    erosion.erosionStep1.activeHeight = height;
+    erosion.erosionStep1.activeCenterX = centerX;
+    erosion.erosionStep1.activeCenterY = centerY;
+
+    erosion.erosionStep2.width = width;
+    erosion.erosionStep2.height = height;
+    erosion.erosionStep2.activeWidth = width;
+    erosion.erosionStep2.activeHeight = height;
+    erosion.erosionStep2.activeCenterX = centerX;
+    erosion.erosionStep2.activeCenterY = centerY;
+
+    // Copy heightmap to erosionstep2
+    erosion.calcAvgHeight.doClear = false;
+    erosion.erosionStep1.doClear = false;
+    erosion.erosionStep2.doClear = false;
+    erosion.copyOperation.fbo = erosion.erosionStep1.fbo;
+    erosion.copyOperation.execute(heightmap, 0);
+
     for (int i = 0; i < timesToRun; i++) {
         erosion.calcAvgHeight.execute(heightmap, obsticleMap);
         GLuint avgHeightTexture = erosion.calcAvgHeight.getTextureResult();
 
-        TextureOperation to = erosion.erosionStep2;
+        TextureOperation to = erosion.erosionStep1;
         if (to.getTextureResult() == heightmap) {
-            to = erosion.erosionStep1;
+            to = erosion.erosionStep2;
         }
         to.execute(heightmap, avgHeightTexture);
         GLuint erodedTexture = to.getTextureResult();

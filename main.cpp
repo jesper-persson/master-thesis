@@ -271,7 +271,7 @@ int main()
         // box.rotation = glm::rotate(glm::mat4(1.0f), i * 0.001f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         box.position.y = 6.0f;
-        float speed = 0.1f;
+        float speed = 0.01f;
         float something = 1;
         float cosV = cos(i * speed);
         float sinV = sin(i * speed);
@@ -286,7 +286,6 @@ int main()
             box2.position.y -= 1 * dt;
         }
         box2.rotation = glm::rotate(glm::mat4(1.0f), i * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
-
 
         prevObsticleMap = obsticleMap;
 
@@ -415,7 +414,7 @@ int main()
         quad.textureId = prevObsticleMap;
         quad.render(shaderProgramQuad, unitMatrix, orthoUI);
         // quadLL.textureId = estimateVelocityProgram.getTextureResult();
-        quadLL.textureId = erosion.distanceMap;
+        quadLL.textureId = erosion.erosionStep1.getTextureResult();
         // quadLL.textureId = fboOcclusionStep.textureId;
         // quadLL.textureId = fboSnowCoverDepth.textureId;
         quadLL.render(shaderProgramQuad, unitMatrix, orthoUI);

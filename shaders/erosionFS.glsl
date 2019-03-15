@@ -13,6 +13,9 @@ uniform sampler2D texture2;
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square
 
+uniform int activeWidth; // Allows to simulate part of texture
+uniform int activeHeight; // Allows to simulate part of texture
+
 in vec2 texCoordInFS;
 
 out vec4 colorFS;
@@ -56,19 +59,19 @@ void main() {
             continue;
         }
 
-        float h = texture(texture1, newTexCoord).r;
+        float h = avgTex.b; //texture(texture1, newTexCoord).r;
         float slope = slope(h, currentH);
 
         if (slope > slopeThreshold) {
             vec4 texVal = texture(texture2, texCoordInFS + offsets[i] * step);
             float totToRemove = texVal.r;
-            float slopeSum = texVal.b;
+            // float slopeSum = texVal.b;
             avgHeight += avgTex.g;
             // if (slopeSum > 0) {
-                // avgHeight += slope/slopeSum * totToRemove;
+            //     avgHeight += slope/slopeSum * totToRemove;
             // }
         }
     }
 
-    colorFS = vec4(1, 1, 1, 1) * avgHeight; 
+    colorFS = vec4(1, 1, 1, 1) * avgHeight;
 }
