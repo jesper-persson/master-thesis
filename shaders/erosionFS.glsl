@@ -16,6 +16,9 @@ uniform int textureHeight; // Not used, since we assume square
 uniform int activeWidth; // Allows to simulate part of texture
 uniform int activeHeight; // Allows to simulate part of texture
 
+uniform float terrainSize;
+uniform float slopeThreshold;
+
 in vec2 texCoordInFS;
 
 out vec4 colorFS;
@@ -25,20 +28,12 @@ const int offsetSize = 8;
 vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 float slope(float h1, float h2) {
-    /**
-     * Remember to change d in "erosionFS.glsl" as well (should be uniform)
-     *
-     * d is the length between two columns in world coords (length of a column).
-     */
-    float terrainSize = 30;
     float d = terrainSize/float(textureWidth);
     return atan(h2*1 - h1*1) / d;
 }
 
 void main() {
     float step = float(1)/textureWidth;
-    float slopeThreshold = 0.09; // Change ing calcAvgHeight shader too
-   
     float currentH = texture(texture1, texCoordInFS).r;
     vec4 data = texture(texture2, texCoordInFS);
     float toRemove = data.r;
@@ -50,8 +45,9 @@ void main() {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
 
         vec4 avgTex = texture(texture2, texCoordInFS + offsets[i] * step);
+        float h = avgTex.b;
 
-        if (avgTex.a < 0.99 || data.a < 0.99) {
+        if (((avgTex.a - h) < 0.01 && avgTex.a <= 9.99) || (data.a - currentH < 0.01 && data.a <= 9.99)) {
             continue;
         }
 
@@ -59,13 +55,11 @@ void main() {
             continue;
         }
 
-        float h = avgTex.b; //texture(texture1, newTexCoord).r;
         float slope = slope(h, currentH);
 
         if (slope > slopeThreshold) {
-            vec4 texVal = texture(texture2, texCoordInFS + offsets[i] * step);
-            float totToRemove = texVal.r;
-            // float slopeSum = texVal.b;
+            float totToRemove = avgTex.r;
+            // float slopeSum = avgTex.b;
             avgHeight += avgTex.g;
             // if (slopeSum > 0) {
             //     avgHeight += slope/slopeSum * totToRemove;

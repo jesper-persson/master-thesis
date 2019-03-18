@@ -18,6 +18,9 @@ uniform int activeHeight; // Allows to simulate part of texture
 uniform int activeCenterX;
 uniform int activeCenterY;
 
+uniform float terrainSize;
+uniform float slopeThreshold;
+
 in vec2 texCoordInFS;
 
 out vec4 colorFS;
@@ -27,15 +30,8 @@ const int offsetSize = 8;
 vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 float slope(float h1, float h2) {
-    /**
-     * Remember to change d in "erosionFS.glsl" as well (should be uniform)
-     *
-     * d is the length between two columns in world coords (length of a column).
-     */
-    float terrainSize = 30;
     float d = terrainSize/float(textureWidth);
-    // return atan(h1 - h2) / d;
-    return atan(h2*1 - h1*1) / d;
+    return atan(h2 - h1) / d;
 }
 
 void main() {
@@ -45,8 +41,7 @@ void main() {
     float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
 
     float step = float(1)/textureWidth;
-    float slopeThreshold = 0.09; //change in erosionFS shader also
-    float roughness = 1/1;
+    float roughness = 0.2;
 
     float heights[offsetSize];
     float slopes[offsetSize];
@@ -62,8 +57,9 @@ void main() {
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
         float obsticleFragment = texture(texture2, newTexCoord).r;
+        float h = texture(texture1, newTexCoord).r;
 
-        if (obsticleFragment < 1.0) {
+        if (obsticleFragment - h < 1 && obsticleFragment <= 9.99 ) {
             continue;
         }
         if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
@@ -72,8 +68,6 @@ void main() {
         if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
             continue;
         }
-
-        float h = texture(texture1, newTexCoord).r;
 
         heights[i] = h;
         slopes[i] = slope(currentH, h);
@@ -88,9 +82,9 @@ void main() {
     float totalToRemove = 0;
     float neighbourQuota = 0;
 
-    if (numWithTooHighSlope > 0.1 && obsticleFragmentCurrent >= 0.99) {
+    if (numWithTooHighSlope > 0.1 && (!(obsticleFragmentCurrent - currentH < 1) || obsticleFragmentCurrent > 9.99))  {
         avgHeightDiff /= (numWithTooHighSlope);
-        avgHeightDiff *= roughness * 0.2;
+        avgHeightDiff *= roughness;
         totalToRemove = avgHeightDiff;
         neighbourQuota = totalToRemove / numWithTooHighSlope;
     }

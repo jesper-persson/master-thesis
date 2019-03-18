@@ -1,9 +1,13 @@
 #version 400
 
 uniform sampler2D texture1;
-uniform sampler2D texture2; // This is a unary operation, so it doesn't need a second texture
+
 uniform int textureWidth;
 uniform int textureHeight;
+
+// Scales the value read from the pixel to account for the fact that the
+// with between two pixels is assumed to be 1.
+uniform float heightScale;
 
 in vec2 texCoordInFS;
 
@@ -18,20 +22,16 @@ void main() {
     float y0 = texture(texture1, texCoordInFS + vec2(0, -hy)).r;
     float y1 = texture(texture1, texCoordInFS + vec2(0, hy)).r;
 
-    // 30 corresponds to with of terrain
-    float pixelWidthX = 30/float(textureWidth) * 1; // With of pixel in worldspace
-    float pixelWidthY = 30/float(textureHeight) * 1; // With of pixel in worldspace
-
     // X normal normal
-    float verticalDiffX = (x1 - x0) * 10;
-    float horizontalDiffX = pixelWidthX * 2;
+    float verticalDiffX = (x1 - x0) * 1 * heightScale;  
+    float horizontalDiffX = 2;
     vec3 horDir = vec3(horizontalDiffX, 0, 0);
     vec3 verDir = vec3(0, verticalDiffX, 0);
     vec3 xNormal = horDir + verDir;
 
     // Y normal normal
-    float verticalDiffY = y1 - y0;
-    float horizontalDiffY = pixelWidthY * 2;
+    float verticalDiffY = (y1 - y0) * 1 * heightScale;
+    float horizontalDiffY = 2;
     vec3 horDir2 = vec3(0, 0, horizontalDiffY);
     vec3 verDir2 = vec3(0, verticalDiffY, 0);
     vec3 yNormal = horDir2 + verDir2;

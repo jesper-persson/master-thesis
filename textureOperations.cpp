@@ -5,6 +5,29 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+/**
+ * Defines a subregion within a texture that the texture operation
+ * will act on.
+ */ 
+class ActiveArea {
+public:
+    int activeCenterX;
+    int activeCenterY;
+    int activeWidth;
+    int activeHeight;
+
+    ActiveArea() {
+
+    }
+
+    ActiveArea(int activeCenterX, int activeCenterY, int activeWidth, int activeHeight) {
+        this->activeCenterX = activeCenterX;
+        this->activeCenterY = activeCenterY;
+        this->activeWidth = activeWidth;
+        this->activeHeight = activeHeight;
+    }
+};
+
 class TextureOperation {
 public:
     int textureWidth;
@@ -16,10 +39,7 @@ public:
     bool doClear;
 
     // Offset for only uppdating part of texture
-    float centerX;
-    float centerY;
-    float width;
-    float height;
+    ActiveArea activeArea;
 
     TextureOperation() {
 
@@ -29,10 +49,7 @@ public:
         this->textureHeight = textureHeight;
         this->shaderProgram = shaderProgram;
     
-        centerX = 0;//textureWidth/2.0f;
-        centerY = 0;//textureHeight/2.0f;
-        width = textureWidth;
-        height = textureHeight;
+        activeArea = ActiveArea(0, 0, textureWidth, textureHeight);
 
         fbo = createFrameBufferSingleTexture(textureWidth, textureHeight);
 
@@ -41,8 +58,8 @@ public:
 
     virtual void bindUniforms() {
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(textureWidth, textureHeight, 1));
-        glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(-centerX, -centerY, 0));
-        glm::mat4 scale2 = glm::scale(glm::mat4(1.0f), glm::vec3(1/(width/2.0f), 1/(height/2.0f), 1));
+        glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(-activeArea.activeCenterX, -activeArea.activeCenterY, 0));
+        glm::mat4 scale2 = glm::scale(glm::mat4(1.0f), glm::vec3(1/(activeArea.activeWidth/2.0f), 1/(activeArea.activeHeight/2.0f), 1));
         glm::mat4 modelToWorld = scale2 * translate * scale;
         glm::mat4 identity = glm::mat4(1.0f);
 
@@ -52,10 +69,15 @@ public:
 
         glUniform1i(glGetUniformLocation(shaderProgram, "textureWidth"), textureWidth);
         glUniform1i(glGetUniformLocation(shaderProgram, "textureHeight"), textureHeight);
+
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeHeight"), activeArea.activeHeight);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeWidth"), activeArea.activeWidth);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeCenterX"), activeArea.activeCenterX);
+        glUniform1i(glGetUniformLocation(shaderProgram, "activeCenterY"), activeArea.activeCenterY);
     }
 
     virtual void execute(GLuint textureInput1, GLuint textureInput2) {
-        glViewport(centerX - width/2.0f + textureWidth/2.0f, centerY - height/2.0f + textureHeight/2.0f, width, height);
+        glViewport(activeArea.activeCenterX - activeArea.activeWidth/2.0f + textureWidth/2.0f, activeArea.activeCenterY - activeArea.activeHeight/2.0f + textureHeight/2.0f, activeArea.activeWidth, activeArea.activeHeight);
         glUseProgram(shaderProgram);
         
         this->bindUniforms();
@@ -70,7 +92,10 @@ public:
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.fboId);
         glClearColor(0, 0.1, 0.5, 1);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
+
+        // glClear(GL_DEPTH_BUFFER_BIT);
+        
         if (doClear) {
             glClear(GL_COLOR_BUFFER_BIT);
         }
@@ -81,6 +106,7 @@ public:
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glEnable(GL_DEPTH_TEST);
     }
 
     virtual GLuint getTextureResult() {
@@ -125,5 +151,34 @@ public:
         } else {
             return fbo.textureId;
         }
+    }
+};
+
+class CalculateNormalsOperation : public TextureOperation {
+public:
+    float heightScale;
+        
+    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
+        this->heightScale = heightScale;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "heightScale"), heightScale);
+        TextureOperation::bindUniforms();
+    }
+};
+
+
+class MultiplyOperation : public TextureOperation {
+public:
+    float factor;
+        
+    MultiplyOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float factor) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
+        this->factor = factor;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "factor"), factor);
+        TextureOperation::bindUniforms();
     }
 };

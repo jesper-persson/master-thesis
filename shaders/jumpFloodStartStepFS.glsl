@@ -23,13 +23,13 @@ void main() {
     float prevPenetration = abs(texture(texture2, texCoordInFS).r);
 
     bool isPenetrating = penetration > 0.0001;
-    bool wasPenetrating = prevPenetration < 0.99; // < 0.1 check for initial black texture
+    bool wasPenetrating = prevPenetration < 9;
 
     if (isPenetrating && !wasPenetrating) {
         colorFS = vec4(0, 0, -1, 0);
     } 
     else if (isPenetrating && wasPenetrating && penetration < prevPenetration) { // if we come from above
-         colorFS = vec4(0, 0, -1, 0);
+        colorFS = vec4(0, 0, -1, 0);
     }
     else if (wasPenetrating) {
         colorFS = vec4(0, 0, 0, 1); // the 1 indicates obsticle

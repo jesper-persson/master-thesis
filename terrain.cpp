@@ -28,9 +28,9 @@ namespace TerrainUtils {
     TerrainData meshFromHeightpoints(float* heightmap, int size) {
         int width = size;
         int height = size;
-        float scaleX = 1;
+        float scaleX = 1/(float)(size - 1);
         float scaleY = 1;
-        float scaleZ = 1;
+        float scaleZ = 1/(float)(size - 1);
         float textureScale = 1;
         
         int numVertices = width * height;
@@ -42,9 +42,9 @@ namespace TerrainUtils {
 
         for (int z = 0; z < height; z++) {
             for (int x = 0; x < width; x++) {
-                positions[(z * width + x) * 3] = x * scaleX;
+                positions[(z * width + x) * 3] = x * scaleX - 0.5f;
                 positions[(z * width + x) * 3 + 1] = heightmap[width * z + x] * scaleY;
-                positions[(z * width + x) * 3 + 2] = z * scaleZ;
+                positions[(z * width + x) * 3 + 2] = z * scaleZ - 0.5f;
                 textureCoordinates[(z * width + x) * 2] = ((float)x / (float)(width - 1)) * textureScale;
                 textureCoordinates[(z * width + x) * 2 + 1] = (1 - (float)z / (float)(height - 1)) * textureScale;
 
@@ -132,7 +132,7 @@ public:
     GLuint occlusionMap;
 
     Terrain() {
-        int numGridsX = 31;
+        int numGridsX = 30;
         TerrainData tr =  TerrainUtils::meshFromHeightpoints(TerrainUtils::getFlatHeightmap(numGridsX), numGridsX);
         vao = tr.vao;
         indexBuffer = tr.indexBuffer;

@@ -23,7 +23,7 @@ GLuint createTextureForPenetration(int size) {
 
 			float hh = 0.0f;
 			if (x  > 50 && x < 150 && y > 50 && y < 150) {
-				hh = 1.0f;
+				hh = 0.0f;
 			}
 
 			pixels[i] = hh;
@@ -59,9 +59,9 @@ GLuint createTextureForHeightmap(int size) {
 		for (int x = 0; x < w; x++) {
 			int i = (y * w + x) * 4;
 
-			float hh = 0.5f;
+			float hh = 5.0f;
 			if (x  > 50 && x < 150 && y > 50 && y < 150) {
-				hh = 0.5f;
+				hh = 5.0f;
 			}
 
 			pixels[i] = hh;

@@ -39,12 +39,11 @@ float depthValueForViewSpaceCoord(vec3 viewSpaceCoord) {
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 0.1).rgb;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 10.5).rgb;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase + normalDetail);
 
-    
     // lightPosition = cameraPosWorldSpaceInFS;
     vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);

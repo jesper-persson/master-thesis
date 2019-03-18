@@ -1,7 +1,6 @@
 #version 400
 
 uniform sampler2D texture1; // Flood
-uniform sampler2D texture2;
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square
 
@@ -35,7 +34,4 @@ void main() {
     }
 
     colorFS = vec4(currentContour.b, numNeighboursWithLessDistance, 0, 1);
-
-    // Visualization
-    // colorFS = vec4(currentContour, currentContour, currentContour, 1) / 20.0;
 }

@@ -44,7 +44,7 @@ void main()
 
    	fragPosWorldSpaceInFS = interpolate3D(fragPosWorldSpaceInTES[0], fragPosWorldSpaceInTES[1], fragPosWorldSpaceInTES[2]);
 	float sampledHeight = texture(heightmap, texCoordFlippedY).r;
-	fragPosWorldSpaceInFS.y = sampledHeight * 10.0f;
+	fragPosWorldSpaceInFS.y = sampledHeight * 1.0f;
 
 	fragPosViewSpaceInFS = vec3(worldToCamera * vec4(fragPosWorldSpaceInFS, 1.0));
    	gl_Position = projection * worldToCamera * vec4(fragPosWorldSpaceInFS, 1.0);

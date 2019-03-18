@@ -17,7 +17,7 @@
 
 const int WINDOW_HEIGHT = 1200;
 const int WINDOW_WIDTH = 1800;
-const float textureSizeSnowHeightmap = 300;
+const float textureSizeSnowHeightmap = 1000;
 const int occlusionTextureWidth = WINDOW_WIDTH / 10.0;
 const int occlusionTextureHeight = WINDOW_HEIGHT / 10.0;
 
@@ -145,21 +145,25 @@ int main()
     // Texture operation shaders
     GLuint shaderProgramLowpass = createShaderProgram("shaders/basicVS.glsl", "shaders/blurFS.glsl");
     GLuint shaderProgramPixelMin = createShaderProgram("shaders/basicVS.glsl", "shaders/minFS.glsl");
-    GLuint shaderProgramCalcNormals = createShaderProgram("shaders/basicVS.glsl", "shaders/calcNormalFS.glsl");
+    GLuint shaderProgramCalculateNormals = createShaderProgram("shaders/basicVS.glsl", "shaders/calculateNormalsFS.glsl");
     GLuint shaderProgramSubtract = createShaderProgram("shaders/basicVS.glsl", "shaders/subtractFS.glsl");
     GLuint shaderProgramAdd = createShaderProgram("shaders/basicVS.glsl", "shaders/addFS.glsl");
     GLuint shaderProgramCopyTexture = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
 
-    glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 1.0f, 100.0f);
+    glm::vec3 terrainOrigin = glm::vec3(0, 0, 0); // Center
+    float terrainSize = 100.0f;
+    float terrainSizeHalf = terrainSize / 2.0f;
+
+    glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 1.0f, 200.0f);
     glm::mat4 orthoUI = glm::ortho(-(float)WINDOW_WIDTH/2.0f,(float)WINDOW_WIDTH/2.0f,-(float)WINDOW_HEIGHT/2.0f,(float)WINDOW_HEIGHT/2.0f,-20.0f,20.0f);
-    glm::mat4 orthoFBO = glm::ortho(-1 * 15.0f,1 * 15.0f,-1 * 15.0f,1 * 15.0f,0.0f,10.0f);
+    glm::mat4 orthoFBO = glm::ortho(-1 * terrainSizeHalf, 1 * terrainSizeHalf, -1 * terrainSizeHalf, 1 * terrainSizeHalf, 0.0f,10.0f);
     glm::mat4 orthoFBOLight = glm::ortho(-1 * 30.0f,1 * 30.0f,-1 * 30.0f,1 * 30.0f,0.0f,80.0f);
     glm::mat4 unitMatrix = glm::mat4(1.0f);
 
     Camera camera;
     Box box;
     box.scale = glm::vec3(2, 4, 2);
-    box.position = glm::vec3(0, 0 +10.5f-4.0f, 0);
+    box.position = glm::vec3(-5, 0 +10.5f-4.0f, 0);
     box.textureId = loadPNGTexture("images/red.png");
     box.normalMap = loadPNGTexture("images/normalmap3.png");
     box.useNormalMapping = true;
@@ -170,8 +174,8 @@ int main()
     box2.normalMap = loadPNGTexture("images/normalmap3.png");
     box2.useNormalMapping = true;
     Terrain ground;
-    ground.scale = glm::vec3(1, 1, 1);
-    ground.position = glm::vec3(-15.0f, 0.0f, -15.0f);
+    ground.scale = glm::vec3(terrainSize, 1, terrainSize);
+    ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("images/white.png");
     ground.normalmap = loadPNGTexture("images/normalmap5.png");
     ground.heightmap = createTextureForHeightmap(textureSizeSnowHeightmap);
@@ -196,16 +200,53 @@ int main()
                          0.5, 0.5, 0.5, 1.0
                         );
 
+    GLuint shaderProgramMultiply = createShaderProgram("shaders/basicVS.glsl", "shaders/multiplyFS.glsl");
+
     PingPongTextureOperation blurOcclusion = PingPongTextureOperation(occlusionTextureHeight, occlusionTextureHeight, shaderProgramLowpass, 4);
-    PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4);
-    TextureOperation calcNormals = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCalcNormals);
+
+    float slopeThreshold = 0.9f;
+
+    const int activeAreaSize = 1;
+    ActiveArea activeAreas[activeAreaSize];// = int[activeAreaSize];
+    activeAreas[0] = ActiveArea(0, 0, 300, 300);
+    // activeAreas[0] = ActiveArea(100, 0, 50, 50);
+    // activeAreas[2] = ActiveArea(-100, 50, 50, 50);
+
+    float heightScale = textureSizeSnowHeightmap / terrainSize;
+    CalculateNormalsOperation calculateNormalsOperation = CalculateNormalsOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCalculateNormals, heightScale);
     TextureOperation minTextureOperation1 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramPixelMin);
     TextureOperation minTextureOperation2 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramPixelMin);
+    TextureOperation minTextureOperation3 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramPixelMin);
     TextureOperation subtract = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramSubtract);
     TextureOperation subtract2 = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramSubtract);
     TextureOperation addTextureOperation = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramAdd);
     TextureOperation copyTextureProgram = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCopyTexture);
-    PingPongTextureOperation blurVelocity = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 1);
+    TextureOperation copyTextureHeightMapProgram = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCopyTexture);
+    PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4);
+    MultiplyOperation multiplyOperation = MultiplyOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramMultiply, 1);
+
+    // In each frame only a subpart of the heightmap is updated, so we begin by writing 
+    // the full heightmap to the framebuffer    
+    copyTextureHeightMapProgram.execute(ground.heightmap, 0);
+    ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
+    copyTextureHeightMapProgram.doClear = false;
+
+    calculateNormalsOperation.execute(ground.heightmap, 0);
+    blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
+    ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
+    calculateNormalsOperation.doClear = false;
+    blurSnowHeightmap.doClear = false;
+
+    calculateNormalsOperation.doClear = false;
+    minTextureOperation1.doClear = false;
+    minTextureOperation2.doClear = false;
+    subtract.doClear = false;
+    subtract2.doClear = false;
+    addTextureOperation.doClear = false;
+    copyTextureProgram.doClear = false; // true?
+    copyTextureHeightMapProgram.doClear = false;
+    blurSnowHeightmap.doClear = false;
+    multiplyOperation.doClear = false; 
 
     // SSAO stuff
     int kernelSize = 64; // Change kernel size in shader too
@@ -232,6 +273,12 @@ int main()
     footstep.box.randomTexture = noiseTexture;
 
     Erosion erosion = initializeErosion(textureSizeSnowHeightmap);
+    erosion.calcAvgHeight.terrainSize = terrainSize;
+    erosion.erosionStep1.terrainSize = terrainSize;
+    erosion.erosionStep2.terrainSize = terrainSize;
+    erosion.calcAvgHeight.slopeThreshold = slopeThreshold;
+    erosion.erosionStep1.slopeThreshold = slopeThreshold;
+    erosion.erosionStep2.slopeThreshold = slopeThreshold;
 
     int i = 0;
     double previousTimeFPS = glfwGetTime();
@@ -276,7 +323,7 @@ int main()
         float cosV = cos(i * speed);
         float sinV = sin(i * speed);
         if (cosV < 0) {
-            // sinV *= 4;
+            sinV *= 4;
         }
 
         box.position.x = 4 + 6 * cosV;
@@ -304,14 +351,17 @@ int main()
         glm::mat4 depthBiasMVP = biasMatrix * orthoFBOLight * worldToCameraLight;
         ground.depthBiasMVP = depthBiasMVP;
 
-        copyTextureProgram.execute(prevObsticleMap, 0);
+        for (int i = 0; i < activeAreaSize; i++) {
+            copyTextureProgram.activeArea = activeAreas[i];
+            copyTextureProgram.execute(prevObsticleMap, 0);
+        }
         prevObsticleMap = copyTextureProgram.getTextureResult();
 
         // Render snow cover depth map
-        glm::mat4 worldToCameraDepth = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+        glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
         glViewport(0, 0, textureSizeSnowHeightmap, textureSizeSnowHeightmap);
         glBindFramebuffer(GL_FRAMEBUFFER, fboSnowCoverDepth.fboId);
-        glClearColor(0.5, 0.1, 0.5, 1);
+        glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         box.render(shaderProgram, worldToCameraDepth, orthoFBO);
         box2.render(shaderProgram, worldToCameraDepth, orthoFBO);
@@ -320,50 +370,58 @@ int main()
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        obsticleMap = fboSnowCoverDepth.textureId;
+        multiplyOperation.factor = 10;
+        
+        for (int i = 0; i < activeAreaSize; i++) {
+            multiplyOperation.activeArea = activeAreas[i];
+            multiplyOperation.execute(fboSnowCoverDepth.textureId, 0);
+        }
+        obsticleMap = multiplyOperation.getTextureResult(); // [0:10]
 
         // Calculate new height map
         TextureOperation to = minTextureOperation1;
         if (to.fbo.textureId == ground.heightmap) {
             to = minTextureOperation2;
         }
-        to.execute(ground.heightmap, fboSnowCoverDepth.textureId);
+        for (int i = 0; i < activeAreaSize; i++) {
+            to.activeArea = activeAreas[i];
+            to.execute(ground.heightmap, multiplyOperation.getTextureResult());
+        }
 
         GLuint textureConsecutivePenetrationDiff;
 
         // Erosion
-        bool useErosion = false;
-        if (isKeyPressed(GLFW_KEY_T) || i > -1) {
-            useErosion = true;
-
-            subtract.execute(to.getTextureResult(), ground.heightmap); // Result is between 0 and -1
-
-            // minTextureOperation1.execute(subtract.getT, fboSnowCoverDepth.textureId);
-            erosion.penetrationTexture = subtract.getTextureResult();
-            
-            // Test detect velocity
-            // subtract2.execute(oldPenetration, erosion.penetrationTexture); // should be between [-1, 1]
-            // blurVelocity.execute(subtract2.getTextureResult(), 0); // resultwill also be between [-1 and 1]
-            // estimateVelocityProgram.execute(subtract2.getTextureResult(), 0);
-            // textureConsecutivePenetrationDiff = estimateVelocityProgram.getTextureResult();
-            // erosion.velocityMap = textureConsecutivePenetrationDiff;
-
-            // erosion.penetrationTexture = createTextureForPenetration(textureSizeSnowHeightmap); // subtract.getTextureResult();
-            buildDistanceMap(erosion, prevObsticleMap);
-            runDistribution(erosion);
-            addTextureOperation.execute(to.getTextureResult(), erosion.distributedPenetratitionTexture);
-        }
-
+        bool useErosion = true;
         if (useErosion) {
+
+            for (int i = 0; i < activeAreaSize; i++) {
+                subtract.activeArea = activeAreas[i];
+                subtract.execute(to.getTextureResult(), ground.heightmap); // Result is between 0 and -10
+                erosion.penetrationTexture = subtract.getTextureResult();
+                buildDistanceMap(erosion, prevObsticleMap, activeAreas[i]);
+                runDistribution(erosion, activeAreas[i]);
+                addTextureOperation.activeArea = activeAreas[i];
+                addTextureOperation.execute(to.getTextureResult(), erosion.distributedPenetratitionTexture);
+            }
             ground.heightmap = addTextureOperation.getTextureResult();
         } else {
             ground.heightmap = to.getTextureResult();
         }
-        
-        ground.heightmap = runErosion(erosion, ground.heightmap, obsticleMap);
 
-        calcNormals.execute(ground.heightmap, 0);
-        blurSnowHeightmap.execute(calcNormals.getTextureResult(), 0);
+        for (int i = 0; i < activeAreaSize; i++) {
+            runErosion(erosion, ground.heightmap, obsticleMap, activeAreas[i]);
+        }        
+        ground.heightmap = erosion.erosionStep1.getTextureResult();
+
+        // Write updates to the FBO for the final heightmap
+        for (int i = 0; i < activeAreaSize; i++) {
+            copyTextureHeightMapProgram.activeArea = activeAreas[i];
+            copyTextureHeightMapProgram.execute(ground.heightmap, 0);
+        }
+        ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
+
+        calculateNormalsOperation.execute(ground.heightmap, 0);
+        blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
         ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
 
         // Render to SSAO depth buffer
@@ -411,7 +469,7 @@ int main()
         // quad.textureId = ground.normalmapMacro;
         // quad.textureId = erosion.penetrationTexture;
         // quad.textureId = textureConsecutivePenetrationDiff;
-        quad.textureId = prevObsticleMap;
+        quad.textureId = fboSnowCoverDepth.textureId;
         quad.render(shaderProgramQuad, unitMatrix, orthoUI);
         // quadLL.textureId = estimateVelocityProgram.getTextureResult();
         quadLL.textureId = erosion.erosionStep1.getTextureResult();
