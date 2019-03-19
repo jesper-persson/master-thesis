@@ -4,30 +4,38 @@
  * This shader implements a part of the erosion step of the erosion shader of "Animating Sand, Mud, and snow".
  */ 
 
-// Height map
+/**
+ * (r, g, b): height value
+ * a: obsticle value
+ */
 uniform sampler2D texture1;
 
-// Obsticle map. Contains obsticles so that ground does not erode into rigid bodies
-uniform sampler2D texture2;
-
 uniform int textureWidth;
-uniform int textureHeight; // Not used, since we assume square
+uniform int textureHeight; // Not used, since we assume square texture
 
-uniform int activeWidth; // Allows to simulate part of texture
-uniform int activeHeight; // Allows to simulate part of texture
+// Allows to simulate part of texture
+uniform int activeWidth;
+uniform int activeHeight;
 uniform int activeCenterX;
 uniform int activeCenterY;
 
 uniform float terrainSize;
 uniform float slopeThreshold;
+const float roughness = 0.8;
 
 in vec2 texCoordInFS;
 
+/**
+ * r: the amount of material this pixel should remove from its height,
+ * g: how much material each "valid" neighbour should receive,
+ * b: the current height,
+ * a: obsticle value 
+ */
 out vec4 colorFS;
 
-const int offsetSize = 8;
-// vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
-vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
+const int offsetSize = 4;
+vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
+// vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 float slope(float h1, float h2) {
     float d = terrainSize/float(textureWidth);
@@ -41,23 +49,20 @@ void main() {
     float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
 
     float step = float(1)/textureWidth;
-    float roughness = 0.2;
 
-    float heights[offsetSize];
-    float slopes[offsetSize];
-
-    float currentH = texture(texture1, texCoordInFS).r;
-    float obsticleFragmentCurrent = texture(texture2, texCoordInFS).r;
+    vec4 currentTex = texture(texture1, texCoordInFS);
+    float currentHeight = currentTex.r;
+    float obsticleFragmentCurrent = currentTex.a;
 
     float avgHeightDiff = 0;
     float numWithTooHighSlope = 0;
-
     float slopeSum = 0;
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-        float obsticleFragment = texture(texture2, newTexCoord).r;
-        float h = texture(texture1, newTexCoord).r;
+        vec4 neighbourTex = texture(texture1, newTexCoord);
+        float obsticleFragment = neighbourTex.a;
+        float h = neighbourTex.r;
 
         if (obsticleFragment - h < 1 && obsticleFragment <= 9.99 ) {
             continue;
@@ -69,25 +74,24 @@ void main() {
             continue;
         }
 
-        heights[i] = h;
-        slopes[i] = slope(currentH, h);
+        float s = slope(currentHeight, h);
 
-        if (slopes[i] > slopeThreshold) {
-            avgHeightDiff += currentH - h;
+        if (s > slopeThreshold) {
+            avgHeightDiff += currentHeight - h;
             numWithTooHighSlope += 1.0;
-            slopeSum += slopes[i];
+            slopeSum += s;
         }
     }
 
     float totalToRemove = 0;
     float neighbourQuota = 0;
 
-    if (numWithTooHighSlope > 0.1 && (!(obsticleFragmentCurrent - currentH < 1) || obsticleFragmentCurrent > 9.99))  {
-        avgHeightDiff /= (numWithTooHighSlope);
+    if (numWithTooHighSlope > 0.1 && (!(obsticleFragmentCurrent - currentHeight < 1) || obsticleFragmentCurrent > 9.99))  {
+        avgHeightDiff /= numWithTooHighSlope;
         avgHeightDiff *= roughness;
         totalToRemove = avgHeightDiff;
         neighbourQuota = totalToRemove / numWithTooHighSlope;
     }
 
-    colorFS = vec4(totalToRemove,neighbourQuota,currentH,obsticleFragmentCurrent);
+    colorFS = vec4(totalToRemove, neighbourQuota, currentHeight, obsticleFragmentCurrent);
 }

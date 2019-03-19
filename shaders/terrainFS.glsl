@@ -39,7 +39,7 @@ float depthValueForViewSpaceCoord(vec3 viewSpaceCoord) {
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 10.5).rgb;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 0.05).rgb * 1;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase + normalDetail);
@@ -54,10 +54,10 @@ void main() {
     vec4 color = vec4(0.98, 0.98, 1, 1);
 
     // If sand
-    ambient = 0.4;
-    diffuseAmount = 0.6;
-    specularAmount = 0.01;
-    color = vec4(0.68, 0.51, 0.28, 1);
+    // ambient = 0.4;
+    // diffuseAmount = 0.6;
+    // specularAmount = 0.01;
+    // color = vec4(0.68, 0.51, 0.28, 1);
 
     // SSAO
     float occlusionFactor = depthValueForViewSpaceCoord(fragPosViewSpaceInFS);

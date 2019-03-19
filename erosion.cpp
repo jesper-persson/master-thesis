@@ -83,7 +83,7 @@ class Erosion
 
     GLuint velocityMap;
 
-    TextureOperation setAllChannels; // Get rid off
+    TextureOperation setChannels; // Get rid off
 
     GLuint distanceMap;
 
@@ -104,7 +104,7 @@ Erosion initializeErosion(int textureSize)
     GLuint shaderProgram5 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl");
     GLuint shaderProgram6 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl");
     GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
-    GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setAllChannels.glsl");
+    GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setChannels.glsl");
     GLuint shaderProgram9 = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
     
 
@@ -146,7 +146,7 @@ Erosion initializeErosion(int textureSize)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.setAllChannels = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram8);
+    erosion.setChannels = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram8);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -207,17 +207,11 @@ void runDistribution(Erosion &erosion, ActiveArea& activeArea) {
     // Distribute one level (USING result from jumpflood)
     erosion.distribute.execute(erosion.penetrationTexture, erosion.distanceMap);
     erosion.distributedPenetratitionTexture = erosion.distribute.getTextureResult();
-
-    // Distribute with velocity
-    // erosion.distributeWithVelocity.velocity = glm::vec3(0, 0, 1);
-    // erosion.distributeWithVelocity.execute(erosion.penetrationTexture, erosion.velocityMap);
-    // erosion.setAllChannels.execute(erosion.distributeWithVelocity.getTextureResult(), 0);
-    // erosion.distributedPenetratitionTexture = erosion.setAllChannels.getTextureResult();
 }
 
 // Performs the last erosion step (even out high slopes)
 void runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap, ActiveArea& activeArea) {
-    int timesToRun = 11; // Must be odd!
+    int timesToRun = 9; // Must be odd!
 
     erosion.calcAvgHeight.activeArea = activeArea;
     erosion.erosionStep1.activeArea = activeArea;
@@ -227,16 +221,25 @@ void runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap, ActiveAr
     erosion.erosionStep1.doClear = false;
     erosion.erosionStep2.doClear = false;
 
+    // Combine heightmap and obsticle map to one
+    erosion.setChannels.doClear = false;
+    erosion.setChannels.activeArea = activeArea;
+    erosion.setChannels.execute(heightmap, obsticleMap);
+
+    GLuint calcAvgHeightInput = erosion.setChannels.getTextureResult();
+
     for (int i = 0; i < timesToRun; i++) {
-        erosion.calcAvgHeight.execute(heightmap, obsticleMap);
+        erosion.calcAvgHeight.execute(calcAvgHeightInput, 0);
         GLuint avgHeightTexture = erosion.calcAvgHeight.getTextureResult();
 
         ErosionOperation to = erosion.erosionStep1;
         if (to.getTextureResult() == heightmap) {
             to = erosion.erosionStep2;
         }
-        to.execute(heightmap, avgHeightTexture);
+        to.execute(avgHeightTexture, 0);
         GLuint erodedTexture = to.getTextureResult();
+
+        calcAvgHeightInput = erodedTexture;
 
         heightmap = erodedTexture;
     }

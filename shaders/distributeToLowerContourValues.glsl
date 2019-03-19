@@ -28,7 +28,7 @@ void main() {
     vec4 val = texture(texture2, texCoordInFS);
     float c0 = val.r;
     float numRec = val.g;
-    float d0 = abs(texture(texture1, texCoordInFS).r);
+    float d0 = abs(texture(texture1, texCoordInFS).r) ;
     float contours[offsetSize];
     float depth[offsetSize];
 

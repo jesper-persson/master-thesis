@@ -17,7 +17,7 @@
 
 const int WINDOW_HEIGHT = 1200;
 const int WINDOW_WIDTH = 1800;
-const float textureSizeSnowHeightmap = 1000;
+const float textureSizeSnowHeightmap = 300;
 const int occlusionTextureWidth = WINDOW_WIDTH / 10.0;
 const int occlusionTextureHeight = WINDOW_HEIGHT / 10.0;
 
@@ -110,6 +110,15 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     }
 }
 
+void setActiveAreaForObject(glm::vec3 &terrainOrigin, float terrainSize, glm::vec3& positionOfObject, glm::vec3& boundingBoxSize, vector<ActiveArea> &activeAreas) {
+    float ratio = textureSizeSnowHeightmap / terrainSize;
+
+    glm::vec3 diff = (positionOfObject - terrainOrigin) * ratio;
+    float size = boundingBoxSize.x * ratio * 4.2f; // 1.4 is margin 
+
+    activeAreas.push_back(ActiveArea(diff.x, diff.z, size, size));
+}
+
 int main()
 {
     // Set up OpenGL
@@ -151,7 +160,7 @@ int main()
     GLuint shaderProgramCopyTexture = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
 
     glm::vec3 terrainOrigin = glm::vec3(0, 0, 0); // Center
-    float terrainSize = 100.0f;
+    float terrainSize = 30.0f;
     float terrainSizeHalf = terrainSize / 2.0f;
 
     glm::mat4 perspective = glm::perspectiveFov(1.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 1.0f, 200.0f);
@@ -204,13 +213,10 @@ int main()
 
     PingPongTextureOperation blurOcclusion = PingPongTextureOperation(occlusionTextureHeight, occlusionTextureHeight, shaderProgramLowpass, 4);
 
-    float slopeThreshold = 0.9f;
+    float slopeThreshold = 2.5f;
 
-    const int activeAreaSize = 1;
-    ActiveArea activeAreas[activeAreaSize];// = int[activeAreaSize];
-    activeAreas[0] = ActiveArea(0, 0, 300, 300);
-    // activeAreas[0] = ActiveArea(100, 0, 50, 50);
-    // activeAreas[2] = ActiveArea(-100, 50, 50, 50);
+    vector<ActiveArea> activeAreas;
+    activeAreas.push_back(ActiveArea(0, 0, textureSizeSnowHeightmap, textureSizeSnowHeightmap));
 
     float heightScale = textureSizeSnowHeightmap / terrainSize;
     CalculateNormalsOperation calculateNormalsOperation = CalculateNormalsOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramCalculateNormals, heightScale);
@@ -334,6 +340,12 @@ int main()
         }
         box2.rotation = glm::rotate(glm::mat4(1.0f), i * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
 
+        // Update active areas
+        // activeAreas.clear();
+        // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, footstep.box.scale, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
+
         prevObsticleMap = obsticleMap;
 
         // Render shadow map
@@ -351,7 +363,7 @@ int main()
         glm::mat4 depthBiasMVP = biasMatrix * orthoFBOLight * worldToCameraLight;
         ground.depthBiasMVP = depthBiasMVP;
 
-        for (int i = 0; i < activeAreaSize; i++) {
+        for (unsigned int i = 0; i < activeAreas.size(); i++) {
             copyTextureProgram.activeArea = activeAreas[i];
             copyTextureProgram.execute(prevObsticleMap, 0);
         }
@@ -372,7 +384,7 @@ int main()
 
         multiplyOperation.factor = 10;
         
-        for (int i = 0; i < activeAreaSize; i++) {
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
             multiplyOperation.activeArea = activeAreas[i];
             multiplyOperation.execute(fboSnowCoverDepth.textureId, 0);
         }
@@ -383,7 +395,7 @@ int main()
         if (to.fbo.textureId == ground.heightmap) {
             to = minTextureOperation2;
         }
-        for (int i = 0; i < activeAreaSize; i++) {
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
             to.activeArea = activeAreas[i];
             to.execute(ground.heightmap, multiplyOperation.getTextureResult());
         }
@@ -394,7 +406,7 @@ int main()
         bool useErosion = true;
         if (useErosion) {
 
-            for (int i = 0; i < activeAreaSize; i++) {
+            for (unsigned i = 0; i < activeAreas.size(); i++) {
                 subtract.activeArea = activeAreas[i];
                 subtract.execute(to.getTextureResult(), ground.heightmap); // Result is between 0 and -10
                 erosion.penetrationTexture = subtract.getTextureResult();
@@ -408,13 +420,13 @@ int main()
             ground.heightmap = to.getTextureResult();
         }
 
-        for (int i = 0; i < activeAreaSize; i++) {
+        for (unsigned int i = 0; i < activeAreas.size(); i++) {
             runErosion(erosion, ground.heightmap, obsticleMap, activeAreas[i]);
         }        
         ground.heightmap = erosion.erosionStep1.getTextureResult();
 
         // Write updates to the FBO for the final heightmap
-        for (int i = 0; i < activeAreaSize; i++) {
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
             copyTextureHeightMapProgram.activeArea = activeAreas[i];
             copyTextureHeightMapProgram.execute(ground.heightmap, 0);
         }
