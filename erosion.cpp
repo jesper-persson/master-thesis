@@ -1,10 +1,30 @@
 #include "textureOperations.cpp"
 #include "shader.cpp"
 
+class JumpFloodFinalize : public TextureOperation {
+public:
+    float compressionRatio;
+
+    JumpFloodFinalize() {
+
+    }
+
+    JumpFloodFinalize(GLuint textureWidth, GLuint textureHeight, GLuint program)
+    : TextureOperation(textureWidth, textureHeight, program) {
+        compressionRatio = 1;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "compressionRatio"), compressionRatio);
+        TextureOperation::bindUniforms();
+    }
+};
+
 class ErosionOperation : public TextureOperation {
 public:
     float terrainSize;
     float slopeThreshold;
+    float roughness;
 
     ErosionOperation() {
 
@@ -18,6 +38,7 @@ public:
     void bindUniforms() override {
         glUniform1f(glGetUniformLocation(shaderProgram, "terrainSize"), terrainSize);
         glUniform1f(glGetUniformLocation(shaderProgram, "slopeThreshold"), slopeThreshold);
+        glUniform1f(glGetUniformLocation(shaderProgram, "roughness"), roughness);
         TextureOperation::bindUniforms();
     }
 };
@@ -69,7 +90,7 @@ class Erosion
     }
     TextureOperation init;
     JumpStepOperation jumpFlood;
-    TextureOperation toDistanceMap;
+    JumpFloodFinalize toDistanceMap;
     PingPongTextureOperation distribute;
     DistributeToContourVelocity distributeWithVelocity;
 
@@ -95,7 +116,7 @@ class Erosion
     ErosionOperation erosionStep2; // For ping pong
 };
 
-Erosion initializeErosion(int textureSize)
+Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour, float compressionRatio)
 {
     GLuint shaderProgram1 = createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFloodStartStepFS.glsl");
     GLuint shaderProgram2 = createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFloodFS.glsl");
@@ -112,46 +133,47 @@ Erosion initializeErosion(int textureSize)
     erosion.textureSize = textureSize;
     erosion.init = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram1);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     int times = log2(erosion.textureSize);
     erosion.jumpFlood = JumpStepOperation(erosion.textureSize, erosion.textureSize, shaderProgram2, times);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.toDistanceMap = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram3);
+    erosion.toDistanceMap = JumpFloodFinalize(erosion.textureSize, erosion.textureSize, shaderProgram3);
+    erosion.toDistanceMap.compressionRatio = compressionRatio;
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.distribute = PingPongTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram4, 20);
+    erosion.distribute = PingPongTextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram4, numTimesToRunDistributeToCoutour);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.distributeWithVelocity = DistributeToContourVelocity(erosion.textureSize, erosion.textureSize, shaderProgram7, 20);
+    erosion.distributeWithVelocity = DistributeToContourVelocity(erosion.textureSize, erosion.textureSize, shaderProgram7, numTimesToRunDistributeToCoutour);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     erosion.setChannels = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram8);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     erosion.calcAvgHeight = ErosionOperation(erosion.textureSize, erosion.textureSize, shaderProgram5);
     
@@ -196,7 +218,7 @@ void buildDistanceMap(Erosion &erosion, GLuint prevPenetration, ActiveArea& acti
     erosion.jumpFlood.execute(erosion.init.getTextureResult(), 0);
 
     // Build distance map from result of jumpfrog
-    erosion.toDistanceMap.execute(erosion.jumpFlood.getTextureResult(), 0);
+    erosion.toDistanceMap.execute(erosion.jumpFlood.getTextureResult(), erosion.penetrationTexture);
     erosion.distanceMap = erosion.toDistanceMap.getTextureResult();
 }
 
@@ -205,13 +227,17 @@ void runDistribution(Erosion &erosion, ActiveArea& activeArea) {
     erosion.distribute.doClear = false;
 
     // Distribute one level (USING result from jumpflood)
-    erosion.distribute.execute(erosion.penetrationTexture, erosion.distanceMap);
+    erosion.distribute.execute(erosion.distanceMap, 0);
     erosion.distributedPenetratitionTexture = erosion.distribute.getTextureResult();
 }
 
 // Performs the last erosion step (even out high slopes)
-void runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap, ActiveArea& activeArea) {
-    int timesToRun = 9; // Must be odd!
+void runErosion(Erosion &erosion, GLuint heightmap, GLuint obsticleMap, ActiveArea& activeArea, int numErosionStepsPerFrame) {
+    int timesToRun = numErosionStepsPerFrame;
+
+    if (timesToRun % 2 == 0) {
+        cout << "Must be odd" << endl;
+    }
 
     erosion.calcAvgHeight.activeArea = activeArea;
     erosion.erosionStep1.activeArea = activeArea;

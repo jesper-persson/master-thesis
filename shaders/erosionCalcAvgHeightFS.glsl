@@ -21,7 +21,7 @@ uniform int activeCenterY;
 
 uniform float terrainSize;
 uniform float slopeThreshold;
-const float roughness = 0.8;
+uniform float roughness;
 
 in vec2 texCoordInFS;
 
@@ -33,9 +33,9 @@ in vec2 texCoordInFS;
  */
 out vec4 colorFS;
 
-const int offsetSize = 4;
-vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
-// vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
+const int offsetSize = 8;
+// vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
+vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 float slope(float h1, float h2) {
     float d = terrainSize/float(textureWidth);

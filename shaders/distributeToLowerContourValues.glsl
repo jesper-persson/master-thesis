@@ -1,13 +1,10 @@
 #version 400
 
 /**
- * Contour map (distance field)
- */
-uniform sampler2D texture2;
-
-/**
- * Penetration depth map.
- * Stores how much material each point should be displaced 
+ * r: penetration depth
+ * g: penetration depth
+ * b: contour value
+ * a: num neighbours with less contour value
  */
 uniform sampler2D texture1; // between 0 and -1
 
@@ -25,30 +22,30 @@ vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), ve
 void main() {
     float step = float(1)/textureWidth;
 
-    vec4 val = texture(texture2, texCoordInFS);
-    float c0 = val.r;
-    float numRec = val.g;
-    float d0 = abs(texture(texture1, texCoordInFS).r) ;
+    vec4 val = texture(texture1, texCoordInFS);
+    float c0 = val.b;
+    float numRec = val.a;
+    float d0 = val.r;
     float contours[offsetSize];
     float depth[offsetSize];
 
-    float iteration = val.b + 1;
+    // float iteration = val.b + 1;
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newCoord = texCoordInFS + offsets[i] * step * 1;
-        vec4 cTexture = texture(texture2, newCoord);
-        float c1 = cTexture.r;
-        float numReceiving = cTexture.g;
+        vec4 cTexture = texture(texture1, newCoord);
+        float c1 = cTexture.b;
+        float numReceiving = cTexture.a;
         float d1 = 0;
         if (numReceiving > 0.1) {
-            d1 = abs(texture(texture1, newCoord).r) / float(numReceiving);
+            d1 = abs(cTexture.r) / float(numReceiving);
         }
         if (newCoord.x < 0 || newCoord.x > 1 || newCoord.y < 0 || newCoord.y > 1) {
             c1 = -1;
             d1 = 0;
         }
         contours[i] = c1;            
-        depth[i] = d1;            
+        depth[i] = d1;
     }
 
     float newDepth = d0;
@@ -64,5 +61,5 @@ void main() {
         }
     }
 
-    outNewDepth = vec4(1, 1, iteration, 1) * newDepth;
+    outNewDepth = vec4(newDepth, newDepth, c0, numRec);
 }

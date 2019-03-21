@@ -57,12 +57,17 @@ namespace TerrainUtils {
                 if (x != width - 1 && z != height - 1) {
                     int index = z * width + x;
                     int arrayIndex = z * (width - 1) + x;
-                    indices[arrayIndex * 6] = index;
-                    indices[arrayIndex * 6 + 1] = index + 1;
+                    indices[arrayIndex * 6] = index + 1;
+                    indices[arrayIndex * 6 + 1] = index;
                     indices[arrayIndex * 6 + 2] = index + width;
+                    
+                    // indices[arrayIndex * 6] = 0;
+                    // indices[arrayIndex * 6 + 1] = 0;
+                    // indices[arrayIndex * 6 + 2] = 0;// index + width;
+                    
                     indices[arrayIndex * 6 + 3] = index + 1;
-                    indices[arrayIndex * 6 + 4] = index + width + 1;
-                    indices[arrayIndex * 6 + 5] = index + width;
+                    indices[arrayIndex * 6 + 4] = index + width;
+                    indices[arrayIndex * 6 + 5] = index + width + 1;
                 }
             }
         }
@@ -106,7 +111,6 @@ namespace TerrainUtils {
         tr.vao = vao;
         return tr;
     }
-
 }
 
 class Terrain {
@@ -131,9 +135,8 @@ public:
     GLuint randomTexture;
     GLuint occlusionMap;
 
-    Terrain() {
-        int numGridsX = 30;
-        TerrainData tr =  TerrainUtils::meshFromHeightpoints(TerrainUtils::getFlatHeightmap(numGridsX), numGridsX);
+    Terrain(int numVerticesPerRow) {
+        TerrainData tr =  TerrainUtils::meshFromHeightpoints(TerrainUtils::getFlatHeightmap(numVerticesPerRow), numVerticesPerRow);
         vao = tr.vao;
         indexBuffer = tr.indexBuffer;
         numIndices = tr.numIndices;
@@ -196,7 +199,6 @@ public:
         glUniform1i(glGetUniformLocation(shaderProgram, "shadowMap"), 7);
         
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "depthBiasMVP"), 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
-        
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

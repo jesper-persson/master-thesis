@@ -3,13 +3,16 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tinyobjloader.h"
+
 #include "texture.cpp"
 #include "render/utilities.hpp"
 
 namespace BoxUtils {
-    const float boxSize = 0.5f;
+    float boxSize = 0.5f;
 
-    const float vertexCoordinates[] = {
+    float vertexCoordinates[] = {
         -boxSize,  boxSize,  boxSize,
         boxSize,  boxSize,  boxSize,
         boxSize, -boxSize,  boxSize,
@@ -41,7 +44,7 @@ namespace BoxUtils {
         -boxSize, -boxSize,  boxSize,
     };
 
-    const float textureCoordinates[] = {
+    float textureCoordinates[] = {
         0.0f, 1.0f,
         1.0f, 1.0f,
         1.0f, 0.0f,
@@ -73,7 +76,7 @@ namespace BoxUtils {
         0.0f, 0.0f,
     };
 
-    const float normals[] = {
+    float normals[] = {
         0.0f, 0.0f, 1.0f,
         0.0f, 0.0f, 1.0f,
         0.0f, 0.0f, 1.0f,
@@ -105,27 +108,29 @@ namespace BoxUtils {
         0.0f, -1.0f, 0.0f,
     };
 
-    unsigned int indices[] {
-        0, 1, 3,
-        1, 2, 3,
+    int indices[] {
+        0, 3, 2,
+        0, 2, 1,
 
-        4, 5, 7,
-        5, 6, 7,
+        4, 5, 6,
+        4, 6, 7,
 
-        8, 9, 11,
-        9, 10, 11,
+        9, 8, 11,
+        9, 11, 10,
 
-        12, 13, 15,
-        13, 14, 15,
+        12, 13, 14,
+        12, 14, 15,
 
-        16, 17, 19,
-        17, 18, 19,
+        18, 17, 16,
+        18, 16, 19,
 
-        20, 21, 23,
-        21, 22, 23
+        22, 23, 20,
+        22, 20, 21
     };
 
-    GLuint createVAO() {
+    GLuint createVAO(float* vertexCoordinates, int vertexCoordinatesSize,
+                     float* normals, int normalsSize,
+                     float* textureCoordinates, int textureCoordinatesSize) {
         GLuint vao;
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
@@ -133,54 +138,52 @@ namespace BoxUtils {
         GLuint vbo = 0;
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, 3 * 24 * sizeof(float), vertexCoordinates, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCoordinatesSize * sizeof(float), vertexCoordinates, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
         GLuint vboNormals = 0;
         glGenBuffers(1, &vboNormals);
         glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-        glBufferData(GL_ARRAY_BUFFER, 3 * 24 * sizeof(float), normals, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, normalsSize * sizeof(float), normals, GL_STATIC_DRAW);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
         GLuint vboTex = 0;
         glGenBuffers(1, &vboTex);
         glBindBuffer(GL_ARRAY_BUFFER, vboTex);
-        glBufferData(GL_ARRAY_BUFFER, 2 * 24 * sizeof(float), textureCoordinates, GL_STATIC_DRAW); // 3 should be 2?
+        glBufferData(GL_ARRAY_BUFFER, textureCoordinatesSize * sizeof(float), textureCoordinates, GL_STATIC_DRAW); // 3 should be 2?
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL); // 3 should be 2?
 
-        float* tangents = new float[24 * 3];
-        float* bitangents = new float[24 * 3];
-        calculateTangentsAndBiTangents(24, vertexCoordinates, textureCoordinates, tangents, bitangents);
+        float* tangents = new float[vertexCoordinatesSize];
+        float* bitangents = new float[vertexCoordinatesSize];
+        calculateTangentsAndBiTangents(textureCoordinatesSize / 3, vertexCoordinates, textureCoordinates, tangents, bitangents);
 
         GLuint vboTangents = 0;
         glGenBuffers(1, &vboTangents);
         glBindBuffer(GL_ARRAY_BUFFER, vboTangents);
-        glBufferData(GL_ARRAY_BUFFER, 3 * 24 * sizeof(float), tangents, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCoordinatesSize * sizeof(float), tangents, GL_STATIC_DRAW);
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
         GLuint vboBitangents = 0;
         glGenBuffers(1, &vboBitangents);
         glBindBuffer(GL_ARRAY_BUFFER, vboBitangents);
-        glBufferData(GL_ARRAY_BUFFER, 3 * 24 * sizeof(float), bitangents, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCoordinatesSize * sizeof(float), bitangents, GL_STATIC_DRAW);
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
 
         return vao;
     }
 
-    GLuint createIndexBuffer() {
+    GLuint createIndexBuffer(int* indices, int indicesSize) {
         GLuint vboIndices;
         glGenBuffers(1, &vboIndices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndices);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize * sizeof(unsigned int), indices, GL_STATIC_DRAW);
         return vboIndices;
     }
-
 }
 
 class Box {
@@ -191,6 +194,7 @@ public:
     GLuint vao;
     GLuint indexBuffer;
     GLuint textureId;
+    int numIndices;
 
     GLuint normalMap;
     bool useNormalMapping;
@@ -203,9 +207,10 @@ public:
     GLuint occlusionMap;
 
     Box() {
-        vao = BoxUtils::createVAO();
-        indexBuffer = BoxUtils::createIndexBuffer();
+        vao = BoxUtils::createVAO(BoxUtils::vertexCoordinates, 3 * 24, BoxUtils::normals, 3 * 24, BoxUtils::textureCoordinates, 3 * 2);
+        indexBuffer = BoxUtils::createIndexBuffer(BoxUtils::indices, 36);
         textureId = loadPNGTexture("images/sample.png");
+        numIndices = 36;
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
         rotation = glm::mat4(1.0f);
@@ -260,6 +265,68 @@ public:
         
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
     }
 };
+
+Box loadUsingTinyObjLoader(std::string filename) {
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	std::string err;
+	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
+
+	if (!err.empty()) {
+		std::cerr << err << std::endl;
+	}
+
+	std::vector<float> vertices;
+	std::vector<float> normals;
+	std::vector<float> textures;
+	std::vector<int> indices;
+
+	// Loop over shapes
+	int i = 0;
+	for (size_t s = 0; s < shapes.size(); s++) {
+
+		// Loop over faces (polygon)
+		size_t index_offset = 0;
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+			size_t fv = shapes[s].mesh.num_face_vertices[f];
+
+			// Loop over vertices in the face.
+			for (size_t v = 0; v < fv; v++) {
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
+				normals.push_back(attrib.normals[3 * idx.normal_index + 0]);
+				normals.push_back(attrib.normals[3 * idx.normal_index + 1]);
+				normals.push_back(attrib.normals[3 * idx.normal_index + 2]);
+				textures.push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
+				textures.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
+				indices.push_back(i);
+				i++;
+			}
+			index_offset += fv;
+
+			// per-face material
+			shapes[s].mesh.material_ids[f];
+		}
+	}
+
+	float *vertexData = &vertices[0];
+	float *normalData = &normals[0];
+	float *textureData = &textures[0];
+	int *indexData = &indices[0];
+
+    Box box;
+    box.vao = BoxUtils::createVAO(vertexData, vertices.size(),
+                                  normalData, normals.size(),
+                                  textureData, textures.size());
+    box.indexBuffer = BoxUtils::createIndexBuffer(indexData, indices.size());
+    box.numIndices = indices.size();
+    
+    return box;   
+}

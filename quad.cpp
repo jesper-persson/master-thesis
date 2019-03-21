@@ -30,8 +30,8 @@ namespace QuadUtils {
     };
 
     unsigned int indices[] {
-        0, 1, 3,
-        1, 2, 3,
+        1, 0, 3,
+        1, 3, 2,
     };
 
     GLuint createVAO() {
@@ -73,7 +73,6 @@ namespace QuadUtils {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
         return vboIndices;
     }
-
 }
 
 class Quad {
