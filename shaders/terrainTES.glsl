@@ -1,6 +1,6 @@
 #version 400
 
-layout(triangles, equal_spacing, ccw) in;
+layout(triangles, fractional_odd_spacing, ccw) in;
 
 uniform sampler2D heightmap;
 uniform sampler2D normalMapMacro;

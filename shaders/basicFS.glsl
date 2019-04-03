@@ -56,5 +56,4 @@ void main() {
 
     vec4 color = texture(texture1, texCoordInFS);
     colorOutFs = color * (intensity + specularCoefficient + ambient);
-    // colorOutFs = vec4(1,1,1,1) * occlusion;
 }

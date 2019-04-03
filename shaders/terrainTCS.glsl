@@ -46,7 +46,7 @@ float tessellationFromCameraDistance(vec3 p1, vec3 p2) {
     vec3 cameraPosWorldSpaceInFS = vec3(worldToCameraInv[3][0], worldToCameraInv[3][1], worldToCameraInv[3][2]);
     vec3 midPoint = (p1 + p2) / 2;
     float dist = length(midPoint - cameraPosWorldSpaceInFS);
-    float tessellationFactor = -0.25*dist + 20;
+    float tessellationFactor = -1*dist + 20;
     return clamp(tessellationFactor, 1, 64);
 }
 
@@ -75,8 +75,8 @@ void main()
     gl_TessLevelOuter[2] = l1;
     gl_TessLevelInner[0] = i;
 
-    // gl_TessLevelOuter[0] = 10;
-    // gl_TessLevelOuter[1] = 10;
-    // gl_TessLevelOuter[2] = 10;
-    // gl_TessLevelInner[0] = 10;
+    gl_TessLevelOuter[0] = 10;
+    gl_TessLevelOuter[1] = 10;
+    gl_TessLevelOuter[2] = 10;
+    gl_TessLevelInner[0] = 10;
 }

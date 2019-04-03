@@ -109,8 +109,8 @@ namespace BoxUtils {
     };
 
     int indices[] {
-        0, 3, 2,
-        0, 2, 1,
+        1, 0, 3,
+        1, 3, 2,
 
         4, 5, 6,
         4, 6, 7,
@@ -158,7 +158,7 @@ namespace BoxUtils {
 
         float* tangents = new float[vertexCoordinatesSize];
         float* bitangents = new float[vertexCoordinatesSize];
-        calculateTangentsAndBiTangents(textureCoordinatesSize / 3, vertexCoordinates, textureCoordinates, tangents, bitangents);
+        calculateTangentsAndBiTangents(vertexCoordinatesSize / 3, vertexCoordinates, textureCoordinates, tangents, bitangents);
 
         GLuint vboTangents = 0;
         glGenBuffers(1, &vboTangents);
@@ -207,14 +207,20 @@ public:
     GLuint occlusionMap;
 
     Box() {
-        vao = BoxUtils::createVAO(BoxUtils::vertexCoordinates, 3 * 24, BoxUtils::normals, 3 * 24, BoxUtils::textureCoordinates, 3 * 2);
-        indexBuffer = BoxUtils::createIndexBuffer(BoxUtils::indices, 36);
-        textureId = loadPNGTexture("images/sample.png");
-        numIndices = 36;
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
         rotation = glm::mat4(1.0f);
         useNormalMapping = false;
+        numSamples = 0;
+    }
+
+    Box static createBox() {
+        Box box;
+        box.vao = BoxUtils::createVAO(BoxUtils::vertexCoordinates, 3 * 24, BoxUtils::normals, 3 * 24, BoxUtils::textureCoordinates, 2 * 24);
+        box.indexBuffer = BoxUtils::createIndexBuffer(BoxUtils::indices, 36);
+        box.textureId = loadPNGTexture("images/gray.png");
+        box.numIndices = 36;
+        return box;
     }
 
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
@@ -327,6 +333,6 @@ Box loadUsingTinyObjLoader(std::string filename) {
                                   textureData, textures.size());
     box.indexBuffer = BoxUtils::createIndexBuffer(indexData, indices.size());
     box.numIndices = indices.size();
-    
+
     return box;   
 }

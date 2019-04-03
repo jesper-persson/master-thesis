@@ -46,16 +46,17 @@ vec3 getNormalWeights(vec3 normal){
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 0.1).rgb * 1;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 1).rgb * 1;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
+    // normalDetail.y *= 10;
     normalDetail = normalize(TBNInFs * normalDetail);
-    normal = normalize(normalBase + normalDetail);
+    normal = normalize(normalBase );
 
     // lightPosition = cameraPosWorldSpaceInFS;
     vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
-    float ambient = 0.76;
+    float ambient = 0.8;
     float diffuseAmount = 0.25;
     float specularAmount = 0.01;
     vec4 color = vec4(0.98, 0.98, 1, 1);
@@ -67,8 +68,9 @@ void main() {
     // color = vec4(0.68, 0.51, 0.28, 1);
 
     // SSAO
-    float occlusionFactor = depthValueForViewSpaceCoord(fragPosViewSpaceInFS);
-    occlusionFactor = 1 - texture(occlusionMap, gl_FragCoord.xy / vec2(WINDOW_WIDTH, WINDOW_HEIGHT)).r;
+    // float occlusionFactor = depthValueForViewSpaceCoord(fragPosViewSpaceInFS);
+    // occlusionFactor = 1 - texture(occlusionMap, gl_FragCoord.xy / vec2(WINDOW_WIDTH, WINDOW_HEIGHT)).r;
+    float occlusionFactor = 0;
     ambient = ambient -  ambient * (occlusionFactor / 4.0);
 
     // Diffuse
@@ -88,6 +90,7 @@ void main() {
     // Shadow
     float visibility = 1;
     float bias = 0.005;
+    bias = max(0.05 * (1.0 - dot(normal, directionToLight)), 0.005);  
     if (texture(shadowMap, shadowCoordInFS.xy).r < shadowCoordInFS.z - bias) {
         visibility = 1;
     }

@@ -2,12 +2,16 @@ class Footstep {
 public:
     Box box;
     float totalTime;
-    int state;
-    float lengthTravelled;
+    float offset;
+
     Footstep() {
-        state = 0;
-        lengthTravelled = 0;
+        offset = 0;
         totalTime = 0;
+        box = loadUsingTinyObjLoader("shoe.obj");
+        box.textureId = loadPNGTexture("images/gray.png");
+        box.scale = glm::vec3(0.006f, 0.006f, 0.006f);
+        box.rotation = glm::rotate(glm::mat4(1.0f), 3.14f / 2, glm::vec3(0.0f, 1.0f, 0.0f));
+        box.position = glm::vec3(-48.0f, 4.5f, 20.0f);
     }
 
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
@@ -16,29 +20,30 @@ public:
     
     void update(float dt) {
         totalTime += dt;
+        float speed = 4.6f * dt;
+        box.position.x += speed * pow(sin(totalTime), 4); //speed * (pow(sin(totalTime), 2));
+        box.position.y += speed * (pow(sin(totalTime + 3.1416f/4.0f), 2) - 0.5f);
+    }   
+};
 
-        if (state == 0) {
-            box.position.y = 10-4 + sin(totalTime);
-            if (box.position.y < 9.1f-4.0f) {
-                state = 1;
-            }
-        }
+class RunningFootsteps {
+public: 
+    Footstep a;
+    Footstep b;
 
-        if (state == 1) {
-            box.position.y = 10 + sin(totalTime);
-            if (box.position.y > 10.9f-4.0f) {
-                state = 2;
-                lengthTravelled = 0;
-            }
-        }
-         
-        if (state == 2) {
-            box.position.x += dt;
-            lengthTravelled += dt;
-            if (lengthTravelled > 3) {
-                lengthTravelled = 0;
-                state = 0;
-            }
-        }
+    RunningFootsteps() {
+        a.box.position.z += 4.0f;
+        a.box.position.y += 2.5f;
+        a.totalTime = 3.14/2.0f;
+    }
+
+    void update(float dt) {
+        a.update(dt);
+        b.update(dt);
+    }
+
+    void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
+        a.render(shaderProgram, worldToCamera, projection);
+        b.render(shaderProgram, worldToCamera, projection);
     }
 };
