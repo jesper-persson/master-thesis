@@ -1,10 +1,5 @@
 #version 400
 
-/*
- * Implementation of "Jump Flooding in GPU with Applications to Voronoi Diagram and Distance Transform"
- * with help from https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
- */
-
 uniform sampler2D texture1;
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square

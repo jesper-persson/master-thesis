@@ -21,21 +21,23 @@ const int occlusionTextureWidth = WINDOW_WIDTH / 10.0;
 const int occlusionTextureHeight = WINDOW_HEIGHT / 10.0;
 
 const float snowCoverMaxHeight = 10.0f;
-const float terrainSize = 50.0f; // World space size of terrain mesh.
-const int numVerticesPerRow = 60; // Resolution of terrain mesh.
+const float terrainSize = 80.0f; // World space size of terrain mesh.
+const int numVerticesPerRow = 80; // Resolution of terrain mesh.
 // Tesselation is manually set in Tessellation control shader.
 
 //30 -> 300
 
-const float textureSizeSnowHeightmap = 600;
+const float textureSizeSnowHeightmap = 500;
 const float boundingBoxMargin = 4.2f;
+
+const bool useErosion = true;
 
 const float compression = 1.0f; // 1 nothing compressed, 0 everything compressed
 const float roughness = 0.3f;
-const float slopeThreshold = 2.9f;
-const int numErosionStepsPerFrame = 31;
+const float slopeThreshold = 1.9f;
+const int numErosionStepsPerFrame = 11; 
 
-const int numBlurNormals = 4; 
+const int numBlurNormals = 2; 
 
 const int numTimesToRunDistributeToCoutour = 5;
 
@@ -183,7 +185,7 @@ int main()
     Camera camera;
     Box box = Box::createBox();
     box.scale = glm::vec3(2, 4, 2);
-    box.position = glm::vec3(-5, 0 +10.5f-4.0f, 0);
+    box.position = glm::vec3(-5, 0 +10.5f-2.0f, 0);
     box.textureId = loadPNGTexture("images/gray.png");
     // box.normalMap = loadPNGTexture("images/normalmap3.png");
     box.useNormalMapping = false;
@@ -197,9 +199,9 @@ int main()
     ground.scale = glm::vec3(terrainSize, 1, terrainSize);
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("images/white.png");
-    ground.normalmap = loadPNGTexture("images/normalmap6.png");
+    ground.normalmap = loadPNGTexture("images/normalmap2.png");
     ground.heightmap = createTextureForHeightmap(textureSizeSnowHeightmap);
-
+    // ground.heightmap = loadPNGTexture("images/terrain1.png");
 
     float quadSize = 400;
     Quad quad;
@@ -244,9 +246,12 @@ int main()
     
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4);
     MultiplyOperation multiplyOperation = MultiplyOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramMultiply, 1);
+    multiplyOperation.factor = snowCoverMaxHeight;
 
     // In each frame only a subpart of the heightmap is updated, so we begin by writing 
-    // the full heightmap to the framebuffer    
+    // the full heightmap to the framebuffer
+    // multiplyOperation.execute(ground.heightmap, 0);
+
     copyTextureHeightMapProgram.execute(ground.heightmap, 0);
     ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
     copyTextureHeightMapProgram.doClear = false;
@@ -293,7 +298,7 @@ int main()
     tire.scale = glm::vec3(0.1f, 0.1f, 0.1f);
 
   
-    RunningFootsteps footstep;
+    Footstep footstep;
     // footstep.box.position.x = -15;
     // footstep.box.ssaoMap = fboDepthSSAO.textureId;
     // footstep.box.samples = samples;
@@ -348,7 +353,7 @@ int main()
         footstep.update(dt*1.0f);
 
         // Moving box 
-        box.position.y = 6.2f + 2 * sin(i*0.01f);
+        box.position.y = 6.2f + 1 * sin(i*0.01f);
         box.position.x = 4 + 6 * cos(i*0.01f);
         box.position.z = 2 + 6 * sin(i*0.01f);
         box.rotation = glm::rotate(glm::mat4(1.0f), i * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -383,8 +388,8 @@ int main()
         activeAreas.clear();
         setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
         glm::vec3 sizeFootsteps = glm::vec3(2, 2, 2);
-        setActiveAreaForObject(terrainOrigin, terrainSize, footstep.a.box.position, sizeFootsteps, activeAreas);
-        setActiveAreaForObject(terrainOrigin, terrainSize, footstep.b.box.position, sizeFootsteps, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, sizeFootsteps, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, sizeFootsteps, activeAreas);
         setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
         glm::vec3 sizeTires = glm::vec3(2, 2, 2);
         setActiveAreaForObject(terrainOrigin, terrainSize, tire.position, sizeTires, activeAreas);
@@ -433,7 +438,7 @@ int main()
         timing.end("RENDER_SNOW_DEPTH");
 
         timing.begin("MULTIPLY");
-        multiplyOperation.factor = snowCoverMaxHeight;
+       
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             multiplyOperation.activeArea = activeAreas[i];
             multiplyOperation.execute(fboSnowCoverDepth.textureId, 0);
@@ -458,7 +463,7 @@ int main()
 
         // Erosion
         timing.begin("DISTANCE_TRANSFORM_AND_DSTR");
-        bool useErosion = true;
+        
         if (useErosion) {
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 subtract.activeArea = activeAreas[i];
@@ -470,17 +475,17 @@ int main()
                 addTextureOperation.execute(to.getTextureResult(), erosion.distributedPenetratitionTexture);
             }
             ground.heightmap = addTextureOperation.getTextureResult();
+            timing.end("DISTANCE_TRANSFORM_AND_DSTR");
+
+            timing.begin("EROSION");
+            for (unsigned int i = 0; i < activeAreas.size(); i++) {
+                runErosion(erosion, ground.heightmap, obsticleMap, activeAreas[i], numErosionStepsPerFrame);
+            }        
+            timing.end("EROSION");
+            ground.heightmap = erosion.erosionStep1.getTextureResult();
         } else {
             ground.heightmap = to.getTextureResult();
         }
-        timing.end("DISTANCE_TRANSFORM_AND_DSTR");
-
-        timing.begin("EROSION");
-        for (unsigned int i = 0; i < activeAreas.size(); i++) {
-            runErosion(erosion, ground.heightmap, obsticleMap, activeAreas[i], numErosionStepsPerFrame);
-        }        
-        ground.heightmap = erosion.erosionStep1.getTextureResult();
-        timing.end("EROSION");
 
         // Write updates to the FBO for the final heightmap
         timing.begin("COPY_TO_NEW_HEIGHTMAP");

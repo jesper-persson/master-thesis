@@ -1,10 +1,6 @@
 #version 400
 
 /**
- * This shader implements a part of the erosion step of the erosion shader of "Animating Sand, Mud, and snow".
- */ 
-
-/**
  * (r, g, b): height value
  * a: obsticle value
  */
@@ -58,9 +54,20 @@ void main() {
     float numWithTooHighSlope = 0;
     float slopeSum = 0;
 
+    vec4 textureValues[offsetSize];
+    textureValues[0] = textureOffset(texture1, texCoordInFS, ivec2(-1, 1));
+    textureValues[1] = textureOffset(texture1, texCoordInFS, ivec2(0, 1));
+    textureValues[2] = textureOffset(texture1, texCoordInFS, ivec2(1, 1));
+    textureValues[3] = textureOffset(texture1, texCoordInFS, ivec2(-1, 0));
+    textureValues[4] = textureOffset(texture1, texCoordInFS, ivec2(1, 0));
+    textureValues[5] = textureOffset(texture1, texCoordInFS, ivec2(-1, -1));
+    textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
+    textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
+
+
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-        vec4 neighbourTex = texture(texture1, newTexCoord);
+        vec4 neighbourTex =  textureValues[i];
         float obsticleFragment = neighbourTex.a;
         float h = neighbourTex.r;
 

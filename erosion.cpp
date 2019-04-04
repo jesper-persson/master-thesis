@@ -124,7 +124,7 @@ Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour,
     GLuint shaderProgram4 = createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl");
     GLuint shaderProgram5 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl");
     GLuint shaderProgram6 = createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl");
-    GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
+    // GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
     GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setChannels.glsl");
     GLuint shaderProgram9 = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
     
@@ -161,7 +161,7 @@ Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour,
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    erosion.distributeWithVelocity = DistributeToContourVelocity(erosion.textureSize, erosion.textureSize, shaderProgram7, numTimesToRunDistributeToCoutour);
+    // erosion.distributeWithVelocity = DistributeToContourVelocity(erosion.textureSize, erosion.textureSize, shaderProgram7, numTimesToRunDistributeToCoutour);
 
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

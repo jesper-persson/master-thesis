@@ -1,18 +1,24 @@
 #version 400
 
 /**
- * r: penetration depth
- * g: penetration depth
+ * r: penetration depth [-1,0]
+ * g: penetration depth [-1,0]
  * b: contour value
  * a: num neighbours with less contour value
  */
-uniform sampler2D texture1; // between 0 and -1
+uniform sampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight;
 
 in vec2 texCoordInFS;
 
+/**
+ * r: new penetration depth [-1,0]
+ * g: new penetration depth [-1,0]
+ * b: contour value
+ * a: num neighbours with less contour value
+ */
 out vec4 outNewDepth;
 
 const int offsetSize = 8;
@@ -28,8 +34,6 @@ void main() {
     float d0 = val.r;
     float contours[offsetSize];
     float depth[offsetSize];
-
-    // float iteration = val.b + 1;
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newCoord = texCoordInFS + offsets[i] * step * 1;

@@ -17,24 +17,15 @@ void main() {
     float stepY =  1 / float(textureHeight);
 
     vec4 sum = vec4(0, 0, 0, 0);
-
-    for (int i = -1; i < 2; i++) {
-        for (int j = -1; j < 2; j++) {
-            sum += texture(texture1, texCoordInFS - vec2(stepX * i, stepY * j)) * kernel[(i+1)*3+(j+1)];
-
-        }
-    }
-
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(-1, 1)) * kernel[0];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(0, 1)) * kernel[1];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(1, 1)) * kernel[2];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(-1, 0)) * kernel[3];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(0, 0)) * kernel[4];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(1, 0)) * kernel[5];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(-1, -1)) * kernel[6];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(0, -1)) * kernel[7];
-    // sum += textureOffset(texture1, texCoordInFS, ivec2(1, -1)) * kernel[8];
-
+    sum += textureOffset(texture1, texCoordInFS, ivec2(-1, 1)) * kernel[0];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(0, 1)) * kernel[1];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(1, 1)) * kernel[2];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(-1, 0)) * kernel[3];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(0, 0)) * kernel[4];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(1, 0)) * kernel[5];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(-1, -1)) * kernel[6];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(0, -1)) * kernel[7];
+    sum += textureOffset(texture1, texCoordInFS, ivec2(1, -1)) * kernel[8];
 
     vec3 sum2 = sum.xyz;
     result = vec4(sum2.xyz, 1);

@@ -1,10 +1,11 @@
 #version 400
 
 /**
- * This shader implements the erosion step of "Animating Sand, Mud, and snow".
- */ 
-
-// output from calc avg height
+ * r: the amount of material this pixel should remove from its height,
+ * g: how much material each "valid" neighbour should receive,
+ * b: the current height,
+ * a: obsticle value 
+ */
 uniform sampler2D texture1;
 
 uniform int textureWidth;
@@ -30,6 +31,7 @@ float slope(float h1, float h2) {
     return atan(h2*1 - h1*1) / d;
 }
 
+
 void main() {
     float step = float(1)/textureWidth;
     vec4 currentTex = texture(texture1, texCoordInFS);
@@ -38,10 +40,21 @@ void main() {
 
     float avgHeight = currentH - toRemove;
 
+    vec4 textureValues[offsetSize];
+    textureValues[0] = textureOffset(texture1, texCoordInFS, ivec2(-1, 1));
+    textureValues[1] = textureOffset(texture1, texCoordInFS, ivec2(0, 1));
+    textureValues[2] = textureOffset(texture1, texCoordInFS, ivec2(1, 1));
+    textureValues[3] = textureOffset(texture1, texCoordInFS, ivec2(-1, 0));
+    textureValues[4] = textureOffset(texture1, texCoordInFS, ivec2(1, 0));
+    textureValues[5] = textureOffset(texture1, texCoordInFS, ivec2(-1, -1));
+    textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
+    textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
+
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
 
-        vec4 neighbourTex = texture(texture1, texCoordInFS + offsets[i] * step);
+        // vec4 neighbourTex = texture(texture1, texCoordInFS + offsets[i] * step);
+        vec4 neighbourTex = textureValues[i];
         float h = neighbourTex.b;
 
         if (((neighbourTex.a - h) < 0.01 && neighbourTex.a <= 9.99) || (currentTex.a - currentH < 0.01 && currentTex.a <= 9.99)) {

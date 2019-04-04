@@ -3,7 +3,7 @@
 uniform sampler2D texture1;
 uniform sampler2D shadowMap;
 vec3 lightPosition = vec3(20, 20, 20);
-vec3 lightDir = normalize(vec3(-1, 1, -1));
+vec3 lightDir = normalize(vec3(-1, -1, -1));
 
 uniform sampler2D normalMap;
 uniform sampler2D normalMapMacro;
@@ -46,14 +46,14 @@ vec3 getNormalWeights(vec3 normal){
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 1).rgb * 1;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 5).rgb * 1;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
-    // normalDetail.y *= 10;
     normalDetail = normalize(TBNInFs * normalDetail);
-    normal = normalize(normalBase );
+    normal = normalize(normalBase);
 
     // lightPosition = cameraPosWorldSpaceInFS;
-    vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
+    // vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
+    vec3 directionToLight = -1*lightDir;
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
     float ambient = 0.8;

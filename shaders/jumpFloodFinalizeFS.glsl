@@ -1,6 +1,7 @@
 #version 400
 
-uniform sampler2D texture1; // Flood
+// Contains result of JumpFlood shader program.
+uniform sampler2D texture1;
 
 // Penetration depth map.
 uniform sampler2D texture2;
