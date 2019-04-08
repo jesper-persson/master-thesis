@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 // Contains result of JumpFlood shader program.
 uniform sampler2D texture1;

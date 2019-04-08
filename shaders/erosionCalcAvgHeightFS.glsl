@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 /**
  * (r, g, b): height value
@@ -18,6 +18,7 @@ uniform int activeCenterY;
 uniform float terrainSize;
 uniform float slopeThreshold;
 uniform float roughness;
+
 
 in vec2 texCoordInFS;
 

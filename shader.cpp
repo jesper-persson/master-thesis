@@ -34,6 +34,7 @@ GLuint createShader(string sourcePath, GLuint type) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
     if (isCompiled == GL_FALSE)
     {
+        cout << "Error file " << sourcePath << endl;
         GLint maxLength = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
         std::vector<GLchar> infoLog(maxLength);
