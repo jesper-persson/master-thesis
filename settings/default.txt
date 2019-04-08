@@ -1,0 +1,10 @@
+terrainSize=80.0f
+numVerticesPerRow=80
+useErosion=true
+compression=0.2f;
+roughness=0.4f
+slopeThreshold=2.9f
+numBlurNormals=10
+numErosionStepsPerFrame=33
+numTimesToRunDistributeToCoutour=5
+textureSizeSnowHeightmap=100.0f

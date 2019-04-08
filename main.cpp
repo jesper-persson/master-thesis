@@ -21,25 +21,22 @@ const int occlusionTextureWidth = WINDOW_WIDTH / 10.0;
 const int occlusionTextureHeight = WINDOW_HEIGHT / 10.0;
 
 const float snowCoverMaxHeight = 10.0f;
-const float terrainSize = 80.0f; // World space size of terrain mesh.
-const int numVerticesPerRow = 80; // Resolution of terrain mesh.
+float terrainSize = 80.0f; // World space size of terrain mesh.
+int numVerticesPerRow = 80; // Resolution of terrain mesh.
+
 // Tesselation is manually set in Tessellation control shader.
 
-//30 -> 300
-
-const float textureSizeSnowHeightmap = 500;
+float textureSizeSnowHeightmap = 500;
 const float boundingBoxMargin = 4.2f;
 
-const bool useErosion = true;
+bool useErosion = true;
+float compression = 1.0f; // 1 => nothing compressed
+float roughness = 0.3f;
+float slopeThreshold = 1.9f;
+int numErosionStepsPerFrame = 11; // Odd number 
+int numBlurNormals = 2; // [1,-]
 
-const float compression = 1.0f; // 1 nothing compressed, 0 everything compressed
-const float roughness = 0.3f;
-const float slopeThreshold = 1.9f;
-const int numErosionStepsPerFrame = 11; 
-
-const int numBlurNormals = 2; 
-
-const int numTimesToRunDistributeToCoutour = 5;
+int numTimesToRunDistributeToCoutour = 5;
 
 #include "texture.cpp"
 #include "shader.cpp"
@@ -52,6 +49,7 @@ const int numTimesToRunDistributeToCoutour = 5;
 #include "textureOperations.cpp"
 #include "erosion.cpp"
 #include "timing.cpp"
+#include "settings.hpp"
 
 using namespace std;
 
@@ -73,37 +71,37 @@ public:
     glm::vec3 forward = glm::normalize(glm::vec3(0.0f, 0, -1.0f));
 };
 
-void updateCamera(Camera &camera, float dt) {
+void controlObject(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, float dt) {
     float speed = 15.0f * dt;
     float rotationSpeed = speed / 8.0f;
-    glm::vec3 left = glm::cross(camera.up, camera.forward);
+    glm::vec3 left = glm::cross(up, forward);
     if (isKeyDown(GLFW_KEY_W)) {
-        camera.position = camera.position + camera.forward * speed;
+        position = position + forward * speed;
     }
     if (isKeyDown(GLFW_KEY_S)) {
-        camera.position = camera.position - camera.forward * speed;
+        position = position - forward * speed;
     }
     if (isKeyDown(GLFW_KEY_A)) {
-        camera.position = camera.position + left * speed;
+        position = position + left * speed;
     }
     if (isKeyDown(GLFW_KEY_D)) {
-        camera.position = camera.position - left * speed;
+        position = position - left * speed;
     }
     if (isKeyDown(GLFW_KEY_LEFT)) {
-        camera.forward = glm::normalize(glm::rotate(camera.forward, rotationSpeed, glm::vec3(0, 1, 0)));
-        camera.up = glm::normalize(glm::rotate(camera.up, rotationSpeed, glm::vec3(0, 1, 0)));
+        forward = glm::normalize(glm::rotate(forward, rotationSpeed, glm::vec3(0, 1, 0)));
+        up = glm::normalize(glm::rotate(up, rotationSpeed, glm::vec3(0, 1, 0)));
     }
     if (isKeyDown(GLFW_KEY_RIGHT)) {
-        camera.forward = glm::normalize(glm::rotate(camera.forward, -rotationSpeed, glm::vec3(0, 1, 0)));
-        camera.up = glm::normalize(glm::rotate(camera.up, -rotationSpeed, glm::vec3(0, 1, 0)));
+        forward = glm::normalize(glm::rotate(forward, -rotationSpeed, glm::vec3(0, 1, 0)));
+        up = glm::normalize(glm::rotate(up, -rotationSpeed, glm::vec3(0, 1, 0)));
     }
     if (isKeyDown(GLFW_KEY_UP)) {
-        camera.forward = glm::normalize(glm::rotate(camera.forward, rotationSpeed, left));
-        camera.up = glm::normalize(glm::rotate(camera.up, rotationSpeed, left));
+        forward = glm::normalize(glm::rotate(forward, rotationSpeed, left));
+        up = glm::normalize(glm::rotate(up, rotationSpeed, left));
     }
     if (isKeyDown(GLFW_KEY_DOWN)) {
-        camera.forward = glm::normalize(glm::rotate(camera.forward, -rotationSpeed, left));
-        camera.up = glm::normalize(glm::rotate(camera.up, -rotationSpeed, left));
+        forward = glm::normalize(glm::rotate(forward, -rotationSpeed, left));
+        up = glm::normalize(glm::rotate(up, -rotationSpeed, left));
     }
 }
 
@@ -127,8 +125,16 @@ void setActiveAreaForObject(glm::vec3 &terrainOrigin, float terrainSize, glm::ve
     activeAreas.push_back(ActiveArea(diff.x, diff.z, size, size));
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    // Settings
+    if (argc > 1) {
+        applySettings(argv[1]);
+    } else {
+        cerr << "Missing settings file" << endl;
+        return 1;
+    }
+
     // Set up OpenGL
     if (!glfwInit())
     {
@@ -200,8 +206,8 @@ int main()
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("images/white.png");
     ground.normalmap = loadPNGTexture("images/normalmap2.png");
-    ground.heightmap = createTextureForHeightmap(textureSizeSnowHeightmap);
-    // ground.heightmap = loadPNGTexture("images/terrain1.png");
+    // ground.heightmap = createTextureForHeightmap(textureSizeSnowHeightmap);
+    ground.heightmap = loadPNGTexture("images/heightmap2.png");
 
     float quadSize = 400;
     Quad quad;
@@ -245,14 +251,17 @@ int main()
     
     
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4);
+    PingPongTextureOperation blueInitialHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 20);
     MultiplyOperation multiplyOperation = MultiplyOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramMultiply, 1);
     multiplyOperation.factor = snowCoverMaxHeight;
 
     // In each frame only a subpart of the heightmap is updated, so we begin by writing 
     // the full heightmap to the framebuffer
-    // multiplyOperation.execute(ground.heightmap, 0);
+    multiplyOperation.execute(ground.heightmap, 0);
 
-    copyTextureHeightMapProgram.execute(ground.heightmap, 0);
+    blueInitialHeightmap.execute(multiplyOperation.getTextureResult(), 0);
+
+    copyTextureHeightMapProgram.execute(blueInitialHeightmap.getTextureResult(), 0);
     ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
     copyTextureHeightMapProgram.doClear = false;
 
@@ -325,11 +334,11 @@ int main()
 
     float tireRotation = 0;
 
-
+    bool controlBox = false;
 
     while (!glfwWindowShouldClose(window))
     {
-        glClearColor(135/255.0f, 206/255.0f, 235/255.0f, 1);
+        glClearColor(145/255.0f, 189/255.0f, 224/255.0f, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate deltaTime and FPS
@@ -347,41 +356,34 @@ int main()
 
         // Update
         timing.begin("UPDATE_OBJECTS");
-        updateCamera(camera, dt);
         glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
+        if (controlBox) {
+            controlObject(box.position, box.forward, box.up, dt * 0.7f);
+            glm::vec3 fromPosition = box.position - box.forward * 16.0f + box.up * 14.0f;
+            worldToCamera = glm::lookAt(fromPosition, box.position, box.up);
+        } else {
+            controlObject(camera.position, camera.forward, camera.up, dt);
+
+            box.position.y = 6.2f + 1 * sin(i*0.01f);
+            box.position.x = 4 + 6 * cos(i*0.01f);
+            box.position.z = 2 + 6 * sin(i*0.01f);
+            box.rotation = glm::rotate(glm::mat4(1.0f), i * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+        }
         footstep.update(dt*1.0f);
+        if (isKeyPressed(GLFW_KEY_T)) {
+            controlBox = !controlBox;
+        }
 
-        // Moving box 
-        box.position.y = 6.2f + 1 * sin(i*0.01f);
-        box.position.x = 4 + 6 * cos(i*0.01f);
-        box.position.z = 2 + 6 * sin(i*0.01f);
-        box.rotation = glm::rotate(glm::mat4(1.0f), i * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // Spinning box
-
-        // box.position.y = 6.0f;
-        // float speed = 0.01f;
-        // float something = 1;
-        // float cosV = cos(i * speed);
-        // float sinV = sin(i * speed);
-        // if (cosV < 0) {
-        //     sinV *= 4;
-        // }
-        // box.position.x = 4 + 6 * cosV;
-        // box.position.z = 2 + 6 * sinV;
-
-        // box2.rotation = glm::rotate(glm::mat4(1.0f), 1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        // box2.rotation = glm::rotate(glm::mat4(1.0f), 1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        box2.rotation = glm::rotate(glm::mat4(1.0f), i * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
+        // box2.rotation = glm::rotate(glm::mat4(1.0f), i * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
+        box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
 
         tire.position.y = 6.5f;
         tire.position.z = -10.0f;
         tire.position.x += 1.0f * dt;
         tireRotation += dt * 0.50f;
-        tire.rotation = glm::rotate(glm::mat4(1.0f), tireRotation, glm::vec3(0.0f, 0.0f, -1.0f));
+        tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
         timing.end("UPDATE_OBJECTS");
-
 
         // Update active areas
         timing.begin("UPDATE_ACTIVE_AREAS");
@@ -576,7 +578,7 @@ int main()
         timing.end("SWAP_BUFFERS");
 
         if (i % 30 == 0) {
-            timing.print();
+            // timing.print();
         }
     }
 

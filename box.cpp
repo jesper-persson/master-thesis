@@ -191,6 +191,9 @@ public:
     glm::vec3 position;
     glm::vec3 scale;
     glm::mat4 rotation;
+    glm::vec3 forward;
+    glm::vec3 up;
+
     GLuint vao;
     GLuint indexBuffer;
     GLuint textureId;
@@ -212,6 +215,8 @@ public:
         rotation = glm::mat4(1.0f);
         useNormalMapping = false;
         numSamples = 0;
+        forward = glm::vec3(0, 0, 1);
+        up = glm::vec3(0, 1, 0);
     }
 
     Box static createBox() {
@@ -226,8 +231,11 @@ public:
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
         glUseProgram(shaderProgram);
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), this->scale);
-        glm::mat4 translate = glm::translate(glm::mat4(1.0f), position);
-        glm::mat4 modelToWorld = translate * rotation * scale;
+
+        // glm::mat4 translate = glm::translate(glm::mat4(1.0f), position);
+        glm::mat4 rotation = glm::lookAt(position, position + forward * 1.0f, up);
+        rotation = glm::inverse(rotation);
+        glm::mat4 modelToWorld = rotation * scale;
 
         glBindBuffer(GL_ARRAY_BUFFER, vao);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelToWorld"), 1, GL_FALSE, glm::value_ptr(modelToWorld));
