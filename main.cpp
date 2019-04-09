@@ -336,6 +336,13 @@ int main(int argc, char* argv[])
 
     bool controlBox = false;
 
+    // SSBO
+    GLuint ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, textureSizeSnowHeightmap * textureSizeSnowHeightmap * sizeof(int), NULL, GL_DYNAMIC_DRAW);
+
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(145/255.0f, 189/255.0f, 224/255.0f, 1);
@@ -473,8 +480,13 @@ int main(int argc, char* argv[])
                 erosion.penetrationTexture = subtract.getTextureResult();
                 buildDistanceMap(erosion, prevObsticleMap, activeAreas[i]);
                 runDistribution(erosion, activeAreas[i]);
+
+                combineSSBOToHeightmap(erosion, activeAreas[i]);
                 addTextureOperation.activeArea = activeAreas[i];
-                addTextureOperation.execute(to.getTextureResult(), erosion.distributedPenetratitionTexture);
+                addTextureOperation.execute(ground.heightmap, erosion.combineSSBO.getTextureResult());
+            }
+            for (unsigned i = 0; i < activeAreas.size(); i++) {
+                
             }
             ground.heightmap = addTextureOperation.getTextureResult();
             timing.end("DISTANCE_TRANSFORM_AND_DSTR");

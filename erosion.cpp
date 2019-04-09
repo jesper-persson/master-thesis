@@ -114,6 +114,9 @@ class Erosion
     ErosionOperation calcAvgHeight;
     ErosionOperation erosionStep1;
     ErosionOperation erosionStep2; // For ping pong
+
+    TextureOperation moveSnowSSBO;
+    TextureOperation combineSSBO;
 };
 
 Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour, float compressionRatio)
@@ -127,6 +130,8 @@ Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour,
     // GLuint shaderProgram7 = createShaderProgram("shaders/basicVS.glsl", "shaders/contourBasedOnVelocityFS.glsl");
     GLuint shaderProgram8 = createShaderProgram("shaders/basicVS.glsl", "shaders/setChannels.glsl");
     GLuint shaderProgram9 = createShaderProgram("shaders/basicVS.glsl", "shaders/copyTextureFS.glsl");
+    GLuint shaderProgram10 = createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl");
+    GLuint shaderProgram11 = createShaderProgram("shaders/basicVS.glsl", "shaders/combineSSBOWithHeightmapFS.glsl");
     
 
     Erosion erosion;
@@ -198,6 +203,9 @@ Erosion initializeErosion(int textureSize, int numTimesToRunDistributeToCoutour,
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
     
+    erosion.moveSnowSSBO = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram10);
+    erosion.combineSSBO = TextureOperation(erosion.textureSize, erosion.textureSize, shaderProgram11);
+
     return erosion;
 }
 
@@ -227,8 +235,20 @@ void runDistribution(Erosion &erosion, ActiveArea& activeArea) {
     erosion.distribute.doClear = false;
 
     // Distribute one level (USING result from jumpflood)
-    erosion.distribute.execute(erosion.distanceMap, 0);
-    erosion.distributedPenetratitionTexture = erosion.distribute.getTextureResult();
+    // erosion.distribute.execute(erosion.distanceMap, 0);
+    // erosion.distributedPenetratitionTexture = erosion.distribute.getTextureResult();
+    
+    erosion.moveSnowSSBO.activeArea = activeArea;
+    erosion.moveSnowSSBO.doClear = false;
+    erosion.moveSnowSSBO.execute(erosion.jumpFlood.getTextureResult(), erosion.penetrationTexture);
+
+  
+}
+
+void combineSSBOToHeightmap(Erosion &erosion, ActiveArea& activeArea) {
+    erosion.combineSSBO.activeArea = activeArea;
+    erosion.combineSSBO.doClear = false;
+    erosion.combineSSBO.execute(0, 0);
 }
 
 // Performs the last erosion step (even out high slopes)
