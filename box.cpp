@@ -289,7 +289,7 @@ Box loadUsingTinyObjLoader(std::string filename) {
 	std::vector<tinyobj::material_t> materials;
 
 	std::string err;
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
 
 	if (!err.empty()) {
 		std::cerr << err << std::endl;

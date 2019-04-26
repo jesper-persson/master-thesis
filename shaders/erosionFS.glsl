@@ -6,7 +6,7 @@
  * b: the current height,
  * a: obsticle value 
  */
-uniform sampler2D texture1;
+uniform usampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square
@@ -20,7 +20,7 @@ in vec2 texCoordInFS;
  * (r, g, b): height
  * a: obsticle
  */
-out vec4 colorFS;
+out uvec2 colorFS;
 
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
@@ -31,16 +31,18 @@ float slope(float h1, float h2) {
     return atan(h2*1 - h1*1) / d;
 }
 
+const int heightColumnScale = 1000;
 
 void main() {
     float step = float(1)/textureWidth;
-    vec4 currentTex = texture(texture1, texCoordInFS);
-    float currentH = currentTex.b;
-    float toRemove = currentTex.r;
+    uvec4 currentTex = texture(texture1, texCoordInFS);
+    uint currentH = currentTex.b;
+    uint toRemove = currentTex.r;
+    uint currentObsticleFragment = currentTex.a;
 
-    float avgHeight = currentH - toRemove;
+    uint avgHeight = currentH - toRemove;
 
-    vec4 textureValues[offsetSize];
+    uvec4 textureValues[offsetSize];
     textureValues[0] = textureOffset(texture1, texCoordInFS, ivec2(-1, 1));
     textureValues[1] = textureOffset(texture1, texCoordInFS, ivec2(0, 1));
     textureValues[2] = textureOffset(texture1, texCoordInFS, ivec2(1, 1));
@@ -50,14 +52,26 @@ void main() {
     textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
     textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
 
+    bool canReceiveSnow = currentObsticleFragment - currentH > 1000 || currentObsticleFragment > 9.9 * heightColumnScale;
+
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
 
-        // vec4 neighbourTex = texture(texture1, texCoordInFS + offsets[i] * step);
-        vec4 neighbourTex = textureValues[i];
-        float h = neighbourTex.b;
+        uvec4 neighbourTex = textureValues[i];
+        uint h = neighbourTex.b;
+        uint obsticleFragment = neighbourTex.a;
 
-        if (((neighbourTex.a - h) < 0.01 && neighbourTex.a <= 9.99) || (currentTex.a - currentH < 0.01 && currentTex.a <= 9.99)) {
+        bool canTransferSnow = obsticleFragment - h > 1000 || obsticleFragment > 9.9 * heightColumnScale;
+
+        // if (((neighbourTex.a - h) < 0.01 && neighbourTex.a <= 9.99 * heightColumnScale) || (currentTex.a  - currentH < 0.01 && currentTex.a <= 9.99 * heightColumnScale)) {
+        //     continue;
+        // }
+
+        // if (obsticleFragment - h <= 1) {
+        //     continue;
+        // }
+
+        if (!canTransferSnow) {
             continue;
         }
 
@@ -65,13 +79,13 @@ void main() {
             continue;
         }
 
-        float slope = slope(h, currentH);
+        float slope = slope(currentH / float(heightColumnScale), h / float(heightColumnScale));
 
-        if (slope > slopeThreshold) {
-            float totToRemove = neighbourTex.r;
+        if (slope > slopeThreshold && canReceiveSnow) {
             avgHeight += neighbourTex.g;
         }
     }
 
-    colorFS = vec4(avgHeight, avgHeight, avgHeight, currentTex.a);
+    colorFS = uvec2(avgHeight, currentTex.a);
+    // colorFS = uvec4(avgHeight, avgHeight, numRec, avgHeight);
 }

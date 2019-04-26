@@ -2,7 +2,7 @@
 
 layout (vertices = 3) out;
 
-uniform sampler2D heightmap;
+uniform usampler2D heightmap;
 uniform sampler2D normalMapMacro;
 
 uniform mat4 worldToCamera;
@@ -75,8 +75,8 @@ void main()
     gl_TessLevelOuter[2] = l1;
     gl_TessLevelInner[0] = i;
 
-    gl_TessLevelOuter[0] = 10;
-    gl_TessLevelOuter[1] = 10;
-    gl_TessLevelOuter[2] = 10;
-    gl_TessLevelInner[0] = 10;
+    gl_TessLevelOuter[0] = 2;
+    gl_TessLevelOuter[1] = 2;
+    gl_TessLevelOuter[2] = 2;
+    gl_TessLevelInner[0] = 2;
 }

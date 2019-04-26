@@ -1,7 +1,7 @@
 #version 430
 
 // Heightmap
-// uniform sampler2D texture1;
+uniform usampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -13,13 +13,8 @@ layout(std430, binding = 2) buffer snowBuffer
     int data[];
 };
 
-/**
- * r: height
- * g: height
- * b: height
- * a: height
- */
-out vec4 outTexture;
+// new height
+out uint outTexture;
 
 vec2 texCoordToCoordinate(vec2 texCoord) {
     return texCoord * textureWidth;
@@ -31,11 +26,10 @@ void main() {
     vec2 coordinate = texCoordToCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
 
-    float ssboValue = data[index] / 10000.0;
-    if (ssboValue > 0.00001 || ssboValue < -0.000001) {
-        outTexture = vec4(1,1,1,1) * ssboValue;
-    } else {
-        outTexture = vec4(0,0,0,0);
-    }
+    int ssboValue = data[index];
     data[index] = 0;
+
+    uint height = texture(texture1, texCoordInFS).r;
+
+    outTexture = uint(height + ssboValue);
 }

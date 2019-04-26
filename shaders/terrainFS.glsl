@@ -1,5 +1,7 @@
 #version 400
 
+uniform usampler2D heightmap;
+
 uniform sampler2D texture1;
 uniform sampler2D shadowMap;
 vec3 lightPosition = vec3(20, 20, 20);
@@ -104,4 +106,6 @@ void main() {
     // vec3 zColor = texture(normalMap, fragPosWorldSpaceInFS.xy * 1).rgb;
     // vec3 finalColor = (xColor * normalWeights.x + yColor * normalWeights.y + zColor * normalWeights.z);
     // colorOutFs = vec4(finalColor, 1) * (intensity + specularCoefficient + ambient);
+
+
 }

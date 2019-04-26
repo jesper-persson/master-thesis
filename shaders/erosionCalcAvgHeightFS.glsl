@@ -1,10 +1,11 @@
 #version 420
 
 /**
- * (r, g, b): height value
- * a: obsticle value
+//  * (r, g, b): height value
+//  * a: obsticle value
  */
-uniform sampler2D texture1;
+uniform usampler2D texture1; // uint heihtmap
+
 
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square texture
@@ -19,6 +20,8 @@ uniform float terrainSize;
 uniform float slopeThreshold;
 uniform float roughness;
 
+const int heightColumnScale = 1000;
+
 
 in vec2 texCoordInFS;
 
@@ -28,7 +31,7 @@ in vec2 texCoordInFS;
  * b: the current height,
  * a: obsticle value 
  */
-out vec4 colorFS;
+out uvec4 colorFS;
 
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
@@ -47,15 +50,14 @@ void main() {
 
     float step = float(1)/textureWidth;
 
-    vec4 currentTex = texture(texture1, texCoordInFS);
-    float currentHeight = currentTex.r;
-    float obsticleFragmentCurrent = currentTex.a;
+    uvec4 currentTex = texture(texture1, texCoordInFS);
+    uint currentHeight = currentTex.r;
+    uint obsticleFragmentCurrent = currentTex.g ;
 
-    float avgHeightDiff = 0;
-    float numWithTooHighSlope = 0;
-    float slopeSum = 0;
+    uint avgHeightDiff = 0;
+    uint numWithTooHighSlope = 0;
 
-    vec4 textureValues[offsetSize];
+    uvec4 textureValues[offsetSize];
     textureValues[0] = textureOffset(texture1, texCoordInFS, ivec2(-1, 1));
     textureValues[1] = textureOffset(texture1, texCoordInFS, ivec2(0, 1));
     textureValues[2] = textureOffset(texture1, texCoordInFS, ivec2(1, 1));
@@ -68,13 +70,23 @@ void main() {
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-        vec4 neighbourTex =  textureValues[i];
-        float obsticleFragment = neighbourTex.a;
-        float h = neighbourTex.r;
+        uvec4 neighbourTex =  textureValues[i];
+        uint obsticleFragment = neighbourTex.g ;
+        uint h = neighbourTex.r;
 
-        if (obsticleFragment - h < 1 && obsticleFragment <= 9.99 ) {
+        bool canReceiveSnow = obsticleFragment - h > 1000 || obsticleFragment > 9.9 * heightColumnScale;
+        if (!canReceiveSnow) {
             continue;
         }
+
+        // if (obsticleFragment - h < 1 * heightColumnScale && obsticleFragment <= 9.99 * heightColumnScale ) {
+        //     continue;
+        // }
+
+        // if (obsticleFragment - h <= 1) {
+        //     continue;
+        // }
+
         if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
             continue;
         }
@@ -82,24 +94,28 @@ void main() {
             continue;
         }
 
-        float s = slope(currentHeight, h);
+        // float s = slope(currentHeight / float(heightColumnScale), h / float(heightColumnScale));
+        float s = slope(h / float(heightColumnScale), currentHeight / float(heightColumnScale));
 
         if (s > slopeThreshold) {
             avgHeightDiff += currentHeight - h;
-            numWithTooHighSlope += 1.0;
-            slopeSum += s;
+            numWithTooHighSlope += 1;
         }
     }
 
-    float totalToRemove = 0;
-    float neighbourQuota = 0;
+    uint totalToRemove = 0;
+    uint neighbourQuota = 0;
 
-    if (numWithTooHighSlope > 0.1 && (!(obsticleFragmentCurrent - currentHeight < 1) || obsticleFragmentCurrent > 9.99))  {
+    bool canTransferSnow = obsticleFragmentCurrent - currentHeight > 1000 || obsticleFragmentCurrent > 9.9 * heightColumnScale;
+
+    if (numWithTooHighSlope > 0.1  && canTransferSnow) { // && (!(obsticleFragmentCurrent - currentHeight < 1 * heightColumnScale) || obsticleFragmentCurrent > 9.99 * heightColumnScale))  {
         avgHeightDiff /= numWithTooHighSlope;
-        avgHeightDiff *= roughness;
-        totalToRemove = avgHeightDiff;
-        neighbourQuota = totalToRemove / numWithTooHighSlope;
+        avgHeightDiff = uint(avgHeightDiff * roughness);
+
+        totalToRemove = avgHeightDiff - avgHeightDiff % numWithTooHighSlope;
+        neighbourQuota = avgHeightDiff / numWithTooHighSlope; // Take remainder and add to total to remove
     }
 
-    colorFS = vec4(totalToRemove, neighbourQuota, currentHeight, obsticleFragmentCurrent);
+    colorFS = uvec4(totalToRemove, neighbourQuota, currentHeight, obsticleFragmentCurrent);
+    // colorFS = uvec4(totalToRemove, neighbourQuota, numWithTooHighSlope, obsticleFragmentCurrent);
 }

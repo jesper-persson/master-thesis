@@ -1,6 +1,6 @@
 #version 400
 
-uniform sampler2D texture1;
+uniform usampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -13,14 +13,16 @@ in vec2 texCoordInFS;
 
 out vec4 result;
 
+const int heightColumnScale = 1000; 
+
 void main() {
     float hx = 1/float(textureWidth);
     float hy = 1/float(textureHeight);
 
-    float x0 = texture(texture1, texCoordInFS + vec2(-hx, 0)).r;
-    float x1 = texture(texture1, texCoordInFS + vec2(hx, 0)).r;
-    float y0 = texture(texture1, texCoordInFS + vec2(0, -hy)).r;
-    float y1 = texture(texture1, texCoordInFS + vec2(0, hy)).r;
+    float x0 = float(texture(texture1, texCoordInFS + vec2(-hx, 0)).r) / heightColumnScale;
+    float x1 = float(texture(texture1, texCoordInFS + vec2(hx, 0)).r) / heightColumnScale;
+    float y0 = float(texture(texture1, texCoordInFS + vec2(0, -hy)).r) / heightColumnScale;
+    float y1 = float(texture(texture1, texCoordInFS + vec2(0, hy)).r) / heightColumnScale;
 
     // X normal normal
     float verticalDiffX = (x1 - x0) * 1 * heightScale;  

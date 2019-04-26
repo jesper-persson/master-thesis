@@ -129,7 +129,7 @@ public:
     glm::mat4 depthBiasMVP;
 
     // SSAO 
-    int numSamples;
+    int numSamples = 0;
     glm::vec3 *samples;
     GLuint ssaoMap;
     GLuint randomTexture;
@@ -161,10 +161,14 @@ public:
 
         glActiveTexture(GL_TEXTURE1);
 	    glBindTexture(GL_TEXTURE_2D, heightmap);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // linear not supported on uint textures
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // linear not supported on uint textures
         glUniform1i(glGetUniformLocation(shaderProgram, "heightmap"), 1);
 
         glActiveTexture(GL_TEXTURE2);
 	    glBindTexture(GL_TEXTURE_2D, normalmapMacro);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glUniform1i(glGetUniformLocation(shaderProgram, "normalMapMacro"), 2);
 
         glActiveTexture(GL_TEXTURE3);

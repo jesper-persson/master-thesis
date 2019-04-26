@@ -41,19 +41,31 @@ public:
     // Offset for only uppdating part of texture
     ActiveArea activeArea;
 
-    TextureOperation() {
+    // Should be either GL_NEAREST or GL_LINEAR
+    GLint sampling;
 
+    TextureOperation() {
+        
     }
-    TextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram) {
+
+    TextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram, TextureFormat internalformat) {
         this->textureWidth = textureWidth;
         this->textureHeight = textureHeight;
         this->shaderProgram = shaderProgram;
     
         activeArea = ActiveArea(0, 0, textureWidth, textureHeight);
 
-        fbo = createFrameBufferSingleTexture(textureWidth, textureHeight);
+        fbo = createFrameBufferSingleTexture(textureWidth, textureHeight, internalformat);
 
         doClear = true;
+        this->sampling = GL_NEAREST;
+    }
+
+    void setSampling(GLint sampling) {
+        this->sampling = sampling;
+        if (sampling != GL_NEAREST && sampling != GL_LINEAR) {
+            cerr << "Invalid value for sampling" << endl;
+        }
     }
 
     virtual void bindUniforms() {
@@ -84,10 +96,14 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureInput1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
         glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureInput2);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
         glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1);
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.fboId);
@@ -123,9 +139,10 @@ public:
 
     }
     
-    PingPongTextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram, int timesRepeat) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
+    PingPongTextureOperation(int textureWidth, int textureHeight, GLuint shaderProgram, int timesRepeat, TextureFormat textureFormat)
+        :  TextureOperation(textureWidth, textureHeight, shaderProgram, textureFormat) {
         this->timesRepeat = timesRepeat;
-        extraFBO = createFrameBufferSingleTexture(textureWidth, textureHeight);
+        extraFBO = createFrameBufferSingleTexture(textureWidth, textureHeight, textureFormat);
     }
 
     // The first texture is pong ponged
@@ -158,7 +175,8 @@ class CalculateNormalsOperation : public TextureOperation {
 public:
     float heightScale;
         
-    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
+    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale)
+        : TextureOperation(textureWidth, textureHeight, shaderProgram, TextureFormat::RGBA16F) {
         this->heightScale = heightScale;
     }
 
@@ -168,17 +186,45 @@ public:
     }
 };
 
-
-class MultiplyOperation : public TextureOperation {
+class ErosionOperation : public TextureOperation {
 public:
-    float factor;
-        
-    MultiplyOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float factor) :  TextureOperation(textureWidth, textureHeight, shaderProgram) {
-        this->factor = factor;
+    float terrainSize;
+    float slopeThreshold;
+    float roughness;
+
+    ErosionOperation() {
+
+    }
+
+    ErosionOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        terrainSize = 1;
     }
 
     void bindUniforms() override {
-        glUniform1f(glGetUniformLocation(shaderProgram, "factor"), factor);
+        glUniform1f(glGetUniformLocation(shaderProgram, "terrainSize"), terrainSize);
+        glUniform1f(glGetUniformLocation(shaderProgram, "slopeThreshold"), slopeThreshold);
+        glUniform1f(glGetUniformLocation(shaderProgram, "roughness"), roughness);
         TextureOperation::bindUniforms();
+    }
+};
+
+class JumpFloodingMainOperation : public PingPongTextureOperation {
+public:
+    int passIndex;
+
+    JumpFloodingMainOperation() {
+
+    }
+
+    JumpFloodingMainOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, int numRepeat)
+    : PingPongTextureOperation(textureWidth, textureHeight, program, numRepeat, TextureFormat::RGBA32I) {
+        passIndex = 0;
+    }
+
+    void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "passIndex"), passIndex);
+        PingPongTextureOperation::bindUniforms();
+        passIndex += 1;
     }
 };
