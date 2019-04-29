@@ -35,7 +35,6 @@ void main() {
     bool isPenetrating = penetration > 0;
     // prevPenetration > 0.00001 checks for first frame, where prevPenetration can be 0. Thus, it is assumed that
     // nothing penetrates the first frame.
-    // bool wasPenetrating = prevPenetration < 9.99999 && prevPenetration > 0.00001;
     bool wasPenetrating = prevPenetration > 0.0001 && prevPenetration < 0.9999;
 
     if (isPenetrating && !wasPenetrating) {

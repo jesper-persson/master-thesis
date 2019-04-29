@@ -278,7 +278,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     JumpFloodingMainOperation jumpFloodMainOperation = JumpFloodingMainOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFloodFS.glsl"), jumpFloodIterations);
 
     GLuint createPenetrationTextureShader = createShaderProgram("shaders/basicVS.glsl", "shaders/createPenetrationTextureFS.glsl");
-    TextureOperation createPenetartionTextureOperation = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createPenetrationTextureShader, TextureFormat::R32I);
+    TextureOperation createPenetartionTextureOperation = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createPenetrationTextureShader, TextureFormat::RGBA32I);
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, shaderProgramLowpass, 4, TextureFormat::RGBA16F);
 
     // When updating the scene, only a subpart of the heightmap is updates. So we must
@@ -391,7 +391,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-         footstep.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        footstep.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         timing.end("RENDER_SNOW_DEPTH");
@@ -405,14 +405,13 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
             createPenetartionTextureOperation.doClear = false;
             createPenetartionTextureOperation.execute(fboSnowCoverDepth.textureId, ground.heightmap);
         }
-        GLuint penetrationTexture =  createPenetartionTextureOperation.getTextureResult();
 
         for (unsigned i = 0; i < activeAreas.size(); i++) {
-            jumpFloodInitOperation.activeArea = activeAreas[i];
-            jumpFloodInitOperation.execute(createPenetartionTextureOperation.getTextureResult(), obsticleMap);
+            // jumpFloodInitOperation.activeArea = activeAreas[i];
+            // jumpFloodInitOperation.execute(createPenetartionTextureOperation.getTextureResult(), obsticleMap);
             jumpFloodMainOperation.activeArea = activeAreas[i];
             jumpFloodMainOperation.passIndex = 0;
-            jumpFloodMainOperation.execute(jumpFloodInitOperation.getTextureResult(), 0);
+            jumpFloodMainOperation.execute(createPenetartionTextureOperation.getTextureResult(), 0);
         }
 
         // SSBO approach to move to contour
