@@ -32,7 +32,7 @@ void main() {
     int penetration = texture(texture1, texCoordInFS).r;
     float prevPenetration = (texture(texture2, texCoordInFS).r);
 
-    bool isPenetrating = penetration < 0;
+    bool isPenetrating = penetration > 0;
     // prevPenetration > 0.00001 checks for first frame, where prevPenetration can be 0. Thus, it is assumed that
     // nothing penetrates the first frame.
     // bool wasPenetrating = prevPenetration < 9.99999 && prevPenetration > 0.00001;

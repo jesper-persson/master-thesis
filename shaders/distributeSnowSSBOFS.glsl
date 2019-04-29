@@ -55,8 +55,8 @@ void main() {
     float compression = 1;
 
     // if (texCoordInFS.x > 0.25 && texCoordInFS.x < 0.65 && texCoordInFS.y > 0.25 && texCoordInFS.y < 0.75) {
-        atomicAdd(data[indexMe], int(penetration));
-        atomicAdd(data[indexCloest], -int(penetration * compression));
+        atomicAdd(data[indexMe], -int(penetration));
+        atomicAdd(data[indexCloest], int(penetration * compression));
 
         // data[indexMe] = 1 * 100000;
     // }

@@ -20,5 +20,8 @@ void main() {
     // if (depthHeight > 9.9) {
     //     height = heightmapValue;
     // }
-    result = int(height) - int(heightmapValue);
+    // result = int(height) - int(heightmapValue);
+    result = int(heightmapValue) - int(height);
 }
+
+// a-b = -(b-a)

@@ -27,7 +27,6 @@ vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), ve
 
 void main() {
     ivec4 current = texture(texture1, texCoordInFS);
-    int penetrationValue = current.w;
     float step = float(1)/textureWidth;
 
     int numNeighboursWithLessDistance = 0;
@@ -46,5 +45,5 @@ void main() {
         numNeighboursWithLessDistance = 0;   
     }
 
-    colorFS = ivec4(penetrationValue, 0, current.z, numNeighboursWithLessDistance);
+    colorFS = ivec4(current.w, 0, current.z, numNeighboursWithLessDistance);
 }

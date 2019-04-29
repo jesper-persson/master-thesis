@@ -416,32 +416,37 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         }
 
         // SSBO approach to move to contour
-        // for (unsigned i = 0; i < activeAreas.size(); i++) {
-        //     buildDeltaSnowSSBOBufferOperation.activeArea = activeAreas[i];
-        //     buildDeltaSnowSSBOBufferOperation.execute(jumpFloodMainOperation.getTextureResult(), 0);
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
+            buildDeltaSnowSSBOBufferOperation.activeArea = activeAreas[i];
+            buildDeltaSnowSSBOBufferOperation.execute(jumpFloodMainOperation.getTextureResult(), 0);
 
-        //     combineSSBOWithHeightmap.activeArea = activeAreas[i];
-        //     combineSSBOWithHeightmap.execute(ground.heightmap, 0);
-        // }
-        // ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
+            combineSSBOWithHeightmap.activeArea = activeAreas[i];
+            combineSSBOWithHeightmap.execute(ground.heightmap, 0);
+        }
+        ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
 
         // Iterative approach to move to contour
-        for (unsigned i = 0; i < activeAreas.size(); i++) {
-            calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
-            calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
+        // for (unsigned i = 0; i < activeAreas.size(); i++) {
+        //     calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
+        //     calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
 
-            distributeToLowerContourValues.activeArea = activeAreas[i];
-            distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
+        //     distributeToLowerContourValues.activeArea = activeAreas[i];
+        //     distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
 
-            combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
-            combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
-        }
-        ground.heightmap = combineDistributedTerrainWithHeightmap.getTextureResult();
+        //     combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
+        //     combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
+        // }
+        // ground.heightmap = combineDistributedTerrainWithHeightmap.getTextureResult();
         
 
         timing.end("DISTANCE_TRANSFORM_AND_DSTR");
+        // Even out steep slopes SSBO
 
-        // Even out steep slopes
+            // Move heightdata to SSBO
+            // Iteratively run shader on ssbo <-- ping pong
+            // combine ssbo back to heightmap
+
+        // Even out steep slopes (2 step process)
         timing.begin("EROSION");
         if (useErosion) {
             GLuint hmap;

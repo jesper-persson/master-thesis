@@ -46,7 +46,7 @@ void main() {
         int contourInner = currentInner.z;
         int numReceivingInner = currentInner.w;
         if (numReceivingInner > 0 && contourInner > contour && contourInner > -1) {
-            totalReceived += abs(penetrationInner) / numReceivingInner;
+            totalReceived += (penetrationInner) / numReceivingInner;
         }
     }
     
@@ -56,22 +56,43 @@ void main() {
     // Giving
         // newPenetration = totalReceived;
         
+    // if (current.z == -3) { // Seed
+    //     newPenetration = penetration + totalReceived;
+    //     offset = newPenetration;
+    // } else if (current.z == -2) { // Obsticle
+    //     newPenetration = penetration;
+    //     offset = offset;
+    // } else {
+
+    //     newPenetration = penetration - totalReceived;
+    //     if (numReceiving > 0) {
+    //         newPenetration = newPenetration + abs(penetration) - abs(penetration) % numReceiving;
+    //     }
+
+    //     offset = offset + totalReceived;
+    //     if (numReceiving > 0) {
+    //         offset = offset - abs(penetration) + abs(penetration) % numReceiving;
+    //     }
+    // }
+
+    //outNewDepth = ivec4(newPenetration, offset, contour, numReceiving);
+
     if (current.z == -3) { // Seed
-        newPenetration = penetration + totalReceived;
-        offset = newPenetration;
+        // newPenetration = penetration + totalReceived;
+        offset = offset + totalReceived;
     } else if (current.z == -2) { // Obsticle
         newPenetration = penetration;
         offset = offset;
     } else {
 
-        newPenetration = penetration - totalReceived;
+        newPenetration = penetration + totalReceived;
         if (numReceiving > 0) {
-            newPenetration = newPenetration + abs(penetration) - abs(penetration) % numReceiving;
+            newPenetration = newPenetration - penetration + penetration % numReceiving;
         }
 
         offset = offset + totalReceived;
         if (numReceiving > 0) {
-            offset = offset - abs(penetration) + abs(penetration) % numReceiving;
+            offset = offset - penetration + penetration % numReceiving;
         }
     }
 
