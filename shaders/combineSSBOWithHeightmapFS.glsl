@@ -1,7 +1,7 @@
 #version 430
 
 // Heightmap
-uniform usampler2D texture1;
+// uniform usampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -29,7 +29,7 @@ void main() {
     int ssboValue = data[index];
     data[index] = 0;
 
-    uint height = texture(texture1, texCoordInFS).r;
+    // uint height = texture(texture1, texCoordInFS).r;
 
-    outTexture = uint(height + ssboValue);
+    outTexture = uint(ssboValue);
 }

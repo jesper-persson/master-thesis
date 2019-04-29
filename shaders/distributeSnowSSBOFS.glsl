@@ -1,12 +1,8 @@
 #version 430
 
-/**
- * r: coordinate to cloest seed
- * g: coordinate to cloest seed
- * b: ?
- * a: ?
- */
-uniform isampler2D texture1;
+uniform isampler2D texture1; // Distance texture
+
+uniform usampler2D texture2; // Heightmap texture
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -47,6 +43,8 @@ void main() {
     int indexCloest = int(cloestSeed.y) * textureWidth + int(cloestSeed.x);
     int indexMe = int(myCoord.y) * textureWidth + int(myCoord.x);
 
+    uint heightmapValue = texture(texture2, texCoordInFS).r;
+
     // Move my penetration to cloest seed
     //  data[indexCloest] += -int(penetration * 10000);
 
@@ -55,7 +53,7 @@ void main() {
     float compression = 1;
 
     // if (texCoordInFS.x > 0.25 && texCoordInFS.x < 0.65 && texCoordInFS.y > 0.25 && texCoordInFS.y < 0.75) {
-        atomicAdd(data[indexMe], -int(penetration));
+        atomicAdd(data[indexMe], -int(penetration) + int(heightmapValue));
         atomicAdd(data[indexCloest], int(penetration * compression));
 
         // data[indexMe] = 1 * 100000;

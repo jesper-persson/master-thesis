@@ -5,7 +5,13 @@ uniform usampler2D texture1;
 uniform int textureWidth;
 uniform int textureHeight;
 
+uniform float terrainSize;
+uniform float roughness;
+uniform float slopeThreshold;
+
 in vec2 texCoordInFS;
+
+const int heightColumnScale = 1000;
 
 layout(std430, binding = 2) buffer snowBuffer
 {
@@ -18,25 +24,20 @@ vec2 texCoordToCoordinate(vec2 texCoord) {
 
 float slope(float h1, float h2) {
     float d = terrainSize / float(textureWidth);
-    return atan(h2*1 - h1*1) / d;
+    return atan(h2 - h1) / d;
 }
+
+bool withinBounds(int index) {
+    return index >= 0 && index <= (textureWidth * textureWidth - 1);
+}
+
+const int numNeighbors = 8;
 
 void main() {
     vec2 coordinate = texCoordToCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
     int ssboValue = data[index];
 
-    int ssboValues[numNeighbors];
-    ssboValues[0] = data[index - textureWidth - 1];
-    ssboValues[1] = data[index - textureWidth];
-    ssboValues[2] = data[index - textureWidth + 1];
-    ssboValues[3] = data[index - 1];
-    ssboValues[4] = data[index + 1];
-    ssboValues[5] = data[index + textureWidth - 1];
-    ssboValues[6] = data[index + textureWidth];
-    ssboValues[7] = data[index + textureWidth + 1];
-
-    const int numNeighbors = 8;
     int indexMap[numNeighbors] = {
         index - textureWidth - 1,
         index - textureWidth,
@@ -48,26 +49,40 @@ void main() {
         index + textureWidth + 1
     };
 
+    int ssboValues[numNeighbors];
+    for (int i = 0; i < numNeighbors; i++) {
+        if (withinBounds(indexMap[i])) {
+            ssboValues[i] = data[indexMap[i]];
+        }
+    }
 
     int avgHeightDiff = 0;
     int numNeighborsWithTooGreatSlope = 0;
     for (int i = 0; i < numNeighbors; i++) {
-        float slopeValue = slope(float(ssboValue), float(ssboValues[i]));
-        if (slopeValue > slopeThreshold) {
-            avgHeightDiff += abs(ssboValue - ssboValues[i]);
-            numNeighborsWithTooGreatSlope++; 
+        if (!withinBounds(indexMap[i])) {
+            continue;
+        }
+        float slopeValue = slope(ssboValue/float(heightColumnScale), ssboValues[i]/float(heightColumnScale));
+        if (slopeValue < slopeThreshold) {
+            avgHeightDiff += (ssboValue - ssboValues[i]);
+            numNeighborsWithTooGreatSlope++;
         }
     }
 
     int numHeightToGive = 0;
     if (numNeighborsWithTooGreatSlope > 0) {
-        numHeightToGive = avgHeightDiff / numNeighborsWithTooGreatSlope;
-        atomicAdd(data[index], numNeighborsWithTooGreatSlope * numHeightToGive);
-    }
-    for (int i = 0; i < numNeighbors; i++) {
-        float slopeValue = slope(float(ssboValue), float(ssboValues[i]));
-        if (slopeValue > slopeThreshold) {
-            atomicAdd(data[indexMap[i]], numHeightToGive);
+        numHeightToGive =  avgHeightDiff / numNeighborsWithTooGreatSlope;
+        numHeightToGive = int(numHeightToGive * roughness);
+
+        atomicAdd(data[index], -numNeighborsWithTooGreatSlope * numHeightToGive);
+        for (int i = 0; i < numNeighbors; i++) {
+            if (!withinBounds(indexMap[i])) {
+                continue;
+            }
+            float slopeValue = slope(ssboValue/float(heightColumnScale), ssboValues[i]/float(heightColumnScale));
+            if (slopeValue < slopeThreshold) {
+                atomicAdd(data[indexMap[i]], numHeightToGive);
+            }
         }
     }
 }
