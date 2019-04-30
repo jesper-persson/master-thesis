@@ -96,5 +96,5 @@ void main() {
         }
     }
 
-    outNewDepth = ivec4(newPenetration, offset, contour, numReceiving);
+    outNewDepth = ivec4(numReceiving, offset, contour, newPenetration);
 }

@@ -122,7 +122,7 @@ void setActiveAreaForObject(glm::vec3 &terrainOrigin, float terrainSize, glm::ve
     float ratio = textureSizeSnowHeightmap / terrainSize;
     glm::vec3 diff = (positionOfObject - terrainOrigin) * ratio;
     int size = boundingBoxSize.x * ratio * boundingBoxMargin;
-    
+
     if (size % 2 != 0) {
         size += 1;
     }
@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
     Quad quad;
     quad.scale = glm::vec3(quadSize, quadSize, 1);
     quad.position = glm::vec3(WINDOW_WIDTH / 2.0f - quadSize / 2.0f - 20, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f + 20, 0);
-    
+
     Quad quadLL;
     quadLL.scale = glm::vec3(quadSize, quadSize, 1);
     quadLL.position = glm::vec3(-WINDOW_WIDTH / 2.0f + quadSize / 2.0f + 10, -WINDOW_HEIGHT / 2.0f + quadSize / 2.0f + 10, 0);
@@ -244,21 +244,15 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
 
     TextureOperation combineSSBOWithHeightmap = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/combineSSBOWithHeightmapFS.glsl"), TextureFormat::R32UI);
 
-    TextureOperation setChannels = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/setChannels.glsl"), TextureFormat::RG32UI);
-    setChannels.doClear = false;
     ErosionOperation calcAvgHeight = ErosionOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl"), TextureFormat::RGBA32UI);
     calcAvgHeight.doClear = false;
     calcAvgHeight.terrainSize = terrainSize;
     calcAvgHeight.slopeThreshold = slopeThreshold;
     calcAvgHeight.roughness = roughness;
-    ErosionOperation evenOutHeights1 = ErosionOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl"), TextureFormat::RG32UI);
-    evenOutHeights1.doClear = false;
-    evenOutHeights1.terrainSize = terrainSize;
-    evenOutHeights1.slopeThreshold = slopeThreshold;
-    ErosionOperation evenOutHeights2 = ErosionOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl"), TextureFormat::RG32UI);
-    evenOutHeights2.doClear = false;
-    evenOutHeights2.terrainSize = terrainSize;
-    evenOutHeights2.slopeThreshold = slopeThreshold;
+    ErosionOperation evenOutHeights = ErosionOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl"), TextureFormat::RG32UI);
+    evenOutHeights.doClear = false;
+    evenOutHeights.terrainSize = terrainSize;
+    evenOutHeights.slopeThreshold = slopeThreshold;
     TextureOperation erosionResultToHeightmap = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/RGBA32UI_TO_R32UI.glsl"), TextureFormat::R32UI);
     erosionResultToHeightmap.doClear = false;
 
@@ -274,13 +268,11 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     calculateNumNeighborsWithLessContourValue.doClear = false;
     PingPongTextureOperation distributeToLowerContourValues = PingPongTextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl"), numTimesToRunDistributeToCoutour, TextureFormat::RGBA32I);
     distributeToLowerContourValues.doClear = false;
-    TextureOperation combineDistributedTerrainWithHeightmap = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/combineDistributedTerrainWithHeightmap.glsl"), TextureFormat::R32UI);
+    PrepareTextureForCalcAvg combineDistributedTerrainWithHeightmap = PrepareTextureForCalcAvg(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/combineDistributedTerrainWithHeightmap.glsl"), TextureFormat::RG32UI);
     combineDistributedTerrainWithHeightmap.doClear = false;
 
 
 
-    TextureOperation jumpFloodInitOperation = TextureOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFloodStartStepFS.glsl"), TextureFormat::RGBA32I);
-    jumpFloodInitOperation.doClear = true;
     int jumpFloodIterations = log2(textureSizeSnowHeightmap);
     JumpFloodingMainOperation jumpFloodMainOperation = JumpFloodingMainOperation(textureSizeSnowHeightmap, textureSizeSnowHeightmap, createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFloodFS.glsl"), jumpFloodIterations);
 
@@ -303,7 +295,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     calculateNormalsOperation.doClear = false;
     copyTextureProgram.doClear = false; // true?
     copyTextureHeightMapProgram.doClear = false;
-    blurSnowHeightmap.doClear = false;    
+    blurSnowHeightmap.doClear = false;
 
     // SSBO for snow distribution
     GLuint ssbo;
@@ -350,7 +342,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         timing.begin("UPDATE_OBJECTS");
         glm::vec3 cameraLookAtPosition = camera.position + camera.forward * 10.0f;
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
-        
+
         if (isKeyPressed(GLFW_KEY_T)) {
             controlBox = !controlBox;
         }
@@ -449,7 +441,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         timing.end("SSBO_EVEN_OUT");
 
         // Iterative approach
-        // timing.begin("SSBO_MOVE_TO_CONTOUR");
+        // timing.begin("ITERATIVE_MOVE_TO_CONTOUR");
         // for (unsigned i = 0; i < activeAreas.size(); i++) {
         //     calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
         //     calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
@@ -458,40 +450,28 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         //     distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
 
         //     combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
+        //     combineDistributedTerrainWithHeightmap.obstacleMap = obsticleMap;
         //     combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
         // }
-        // ground.heightmap = combineDistributedTerrainWithHeightmap.getTextureResult();
-        //  timing.end("SSBO_MOVE_TO_CONTOUR");
+        // timing.end("ITERATIVE_MOVE_TO_CONTOUR");
 
         // timing.begin("ITERATIVE_EVEN_OUT");
         // if (useErosion) {
-        //     GLuint hmap;
         //     for (unsigned int i = 0; i < activeAreas.size(); i++) {
-        //         setChannels.activeArea = activeAreas[i];
         //         calcAvgHeight.activeArea = activeAreas[i];
-        //         evenOutHeights1.activeArea = activeAreas[i];
-        //         evenOutHeights2.activeArea = activeAreas[i];
+        //         evenOutHeights.activeArea = activeAreas[i];
 
-        //         setChannels.execute(ground.heightmap, obsticleMap);
-
-        //         GLuint calcAvgHeightInput = setChannels.getTextureResult();
-        //         hmap = ground.heightmap;
+        //         GLuint calcAvgHeightInput = combineDistributedTerrainWithHeightmap.getTextureResult();
         //         for (int j = 0; j < numErosionStepsPerFrame; j++) {
         //             calcAvgHeight.execute(calcAvgHeightInput, 0);
         //             GLuint avgHeightTexture = calcAvgHeight.getTextureResult();
 
-        //             ErosionOperation activeEvenOutHeightOperation = evenOutHeights1;
-        //             if (activeEvenOutHeightOperation.getTextureResult() == hmap) {
-        //                 activeEvenOutHeightOperation = evenOutHeights2;
-        //             }
-        //             activeEvenOutHeightOperation.execute(avgHeightTexture, 0);
-        //             GLuint erodedTexture = activeEvenOutHeightOperation.getTextureResult();
-        //             calcAvgHeightInput = erodedTexture;
-        //             hmap = erodedTexture;
+        //             evenOutHeights.execute(avgHeightTexture, 0);
+        //             calcAvgHeightInput = evenOutHeights.getTextureResult();
         //         }
         //     }
 
-        //     erosionResultToHeightmap.execute(hmap, 0);
+        //     erosionResultToHeightmap.execute(evenOutHeights.getTextureResult(), 0);
         //     ground.heightmap = erosionResultToHeightmap.getTextureResult();
         // }
         // timing.end("ITERATIVE_EVEN_OUT");

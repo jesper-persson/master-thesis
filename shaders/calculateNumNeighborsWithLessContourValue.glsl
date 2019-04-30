@@ -45,5 +45,5 @@ void main() {
         numNeighboursWithLessDistance = 0;   
     }
 
-    colorFS = ivec4(current.w, 0, current.z, numNeighboursWithLessDistance);
+    colorFS = ivec4(numNeighboursWithLessDistance, 0, current.z, current.w);
 }

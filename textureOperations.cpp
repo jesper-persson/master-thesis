@@ -228,3 +228,27 @@ public:
         passIndex += 1;
     }
 };
+
+
+
+class PrepareTextureForCalcAvg : public TextureOperation {
+public:
+    GLuint obstacleMap;
+
+    PrepareTextureForCalcAvg() {
+
+    }
+
+    PrepareTextureForCalcAvg(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+    }
+
+    void bindUniforms() override {
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, obstacleMap);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        glUniform1i(glGetUniformLocation(shaderProgram, "texture3"), 2);
+        TextureOperation::bindUniforms();
+    }
+};
