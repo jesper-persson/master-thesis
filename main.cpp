@@ -418,63 +418,60 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         timing.end("JUMPFLOODING");
 
 
-        // SSBO approach
-        timing.begin("SSBO_MOVE_TO_CONTOUR");
-        for (unsigned i = 0; i < activeAreas.size(); i++) {
-            buildDeltaSnowSSBOBufferOperation.activeArea = activeAreas[i];
-            buildDeltaSnowSSBOBufferOperation.execute(jumpFloodMainOperation.getTextureResult(), ground.heightmap);
-        }
-        timing.end("SSBO_MOVE_TO_CONTOUR");
+        // // SSBO approach
+        // timing.begin("SSBO_MOVE_TO_CONTOUR");
+        // for (unsigned i = 0; i < activeAreas.size(); i++) {
+        //     buildDeltaSnowSSBOBufferOperation.activeArea = activeAreas[i];
+        //     buildDeltaSnowSSBOBufferOperation.execute(jumpFloodMainOperation.getTextureResult(), ground.heightmap);
+        // }
+        // timing.end("SSBO_MOVE_TO_CONTOUR");
 
-        timing.begin("SSBO_EVEN_OUT");
-        for (unsigned i = 0; i < activeAreas.size(); i++) {
-            for (int j = 0; j < numErosionStepsPerFrame; j++) {
-                ssboEvenOutSlopes.execute(0, 0);
-            }
-        }
+        // timing.begin("SSBO_EVEN_OUT");
+        // for (unsigned i = 0; i < activeAreas.size(); i++) {
+        //     for (int j = 0; j < numErosionStepsPerFrame; j++) {
+        //         ssboEvenOutSlopes.execute(0, 0);
+        //     }
+        // }
 
-        for (unsigned i = 0; i < activeAreas.size(); i++) {
-            combineSSBOWithHeightmap.activeArea = activeAreas[i];
-            combineSSBOWithHeightmap.execute(0, 0);
-        }
-        ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
-        timing.end("SSBO_EVEN_OUT");
+        // for (unsigned i = 0; i < activeAreas.size(); i++) {
+        //     combineSSBOWithHeightmap.activeArea = activeAreas[i];
+        //     combineSSBOWithHeightmap.execute(0, 0);
+        // }
+        // ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
+        // timing.end("SSBO_EVEN_OUT");
 
         // Iterative approach
-        // timing.begin("ITERATIVE_MOVE_TO_CONTOUR");
-        // for (unsigned i = 0; i < activeAreas.size(); i++) {
-        //     calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
-        //     calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
+        timing.begin("ITERATIVE_MOVE_TO_CONTOUR");
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
+            calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
+            calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
 
-        //     distributeToLowerContourValues.activeArea = activeAreas[i];
-        //     distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
+            distributeToLowerContourValues.activeArea = activeAreas[i];
+            distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
 
-        //     combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
-        //     combineDistributedTerrainWithHeightmap.obstacleMap = obsticleMap;
-        //     combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
-        // }
-        // timing.end("ITERATIVE_MOVE_TO_CONTOUR");
+            combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
+            combineDistributedTerrainWithHeightmap.obstacleMap = obsticleMap;
+            combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
+        }
+        timing.end("ITERATIVE_MOVE_TO_CONTOUR");
 
-        // timing.begin("ITERATIVE_EVEN_OUT");
-        // if (useErosion) {
-        //     for (unsigned int i = 0; i < activeAreas.size(); i++) {
-        //         calcAvgHeight.activeArea = activeAreas[i];
-        //         evenOutHeights.activeArea = activeAreas[i];
+        timing.begin("ITERATIVE_EVEN_OUT");
+        if (useErosion) {
+            for (unsigned int i = 0; i < activeAreas.size(); i++) {
+                calcAvgHeight.activeArea = activeAreas[i];
+                evenOutHeights.activeArea = activeAreas[i];
 
-        //         GLuint calcAvgHeightInput = combineDistributedTerrainWithHeightmap.getTextureResult();
-        //         for (int j = 0; j < numErosionStepsPerFrame; j++) {
-        //             calcAvgHeight.execute(calcAvgHeightInput, 0);
-        //             GLuint avgHeightTexture = calcAvgHeight.getTextureResult();
-
-        //             evenOutHeights.execute(avgHeightTexture, 0);
-        //             calcAvgHeightInput = evenOutHeights.getTextureResult();
-        //         }
-        //     }
-
-        //     erosionResultToHeightmap.execute(evenOutHeights.getTextureResult(), 0);
-        //     ground.heightmap = erosionResultToHeightmap.getTextureResult();
-        // }
-        // timing.end("ITERATIVE_EVEN_OUT");
+                GLuint calcAvgHeightInput = combineDistributedTerrainWithHeightmap.getTextureResult();
+                for (int j = 0; j < numErosionStepsPerFrame; j++) {
+                    calcAvgHeight.execute(calcAvgHeightInput, 0);
+                    evenOutHeights.execute(calcAvgHeight.getTextureResult(), 0);
+                    calcAvgHeightInput = evenOutHeights.getTextureResult();
+                }
+            }
+            erosionResultToHeightmap.execute(evenOutHeights.getTextureResult(), 0);
+            ground.heightmap = erosionResultToHeightmap.getTextureResult();
+        }
+        timing.end("ITERATIVE_EVEN_OUT");
 
         // Write updates to the FBO for the final heightmap
         timing.begin("COPY_TO_NEW_HEIGHTMAP");
@@ -521,8 +518,8 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
         timing.end("SWAP_BUFFERS");
 
         if (frameCounterGlobal == 0) {
+            // readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, textureSizeSnowHeightmap, TextureFormat::R32UI);
         }
-            readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, textureSizeSnowHeightmap, TextureFormat::R32UI);
 
         if (frameCounterGlobal % 100 == 0) {
             timing.print();

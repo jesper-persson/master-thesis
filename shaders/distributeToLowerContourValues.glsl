@@ -29,10 +29,10 @@ void main() {
     float step = float(1)/textureWidth;
 
     ivec4 current = texture(texture1, texCoordInFS);
-    int penetration = current.x;
+    int penetration = current.w;
     int offset = current.y;
     int contour = current.z;
-    int numReceiving = current.w;
+    int numReceiving = current.x;
 
     int totalReceived = 0;
     for (int i = 0; i < offsetSize; i++) {
@@ -42,9 +42,9 @@ void main() {
         }
 
         ivec4 currentInner = texture(texture1, newCoord);
-        int penetrationInner = currentInner.x;
+        int penetrationInner = currentInner.w;
         int contourInner = currentInner.z;
-        int numReceivingInner = currentInner.w;
+        int numReceivingInner = currentInner.x;
         if (numReceivingInner > 0 && contourInner > contour && contourInner > -1) {
             totalReceived += (penetrationInner) / numReceivingInner;
         }
