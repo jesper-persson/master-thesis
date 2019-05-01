@@ -21,6 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 10;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
+const bool useSSBO = true;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -224,17 +225,31 @@ int main(int argc, char* argv[])
 
 
     FBOWrapper fboSnowCoverDepth = createFBOForDepthTexture(heightmapSize, heightmapSize);
-glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+    glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
 
     float heightScale = heightmapSize / terrainSize;
     CalculateNormalsOperation calculateNormalsOperation = CalculateNormalsOperation(heightmapSize, heightmapSize, shaderProgramCalculateNormals, heightScale, heightColumnScale);
-    TextureOperation copyTextureProgram = TextureOperation(heightmapSize, heightmapSize, shaderProgramCopyTexture, TextureFormat::RGBA16F);
     TextureOperation copyTextureHeightMapProgram = TextureOperation(heightmapSize, heightmapSize, shaderProgramCopyTexture, TextureFormat::R32UI);
+    // When updating the scene, only a subpart of the heightmap is updates. So we must
+    // begin by storing the entire heightmap in this framebuffer
+    copyTextureHeightMapProgram.execute(ground.heightmap, 0);
+    ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
+    copyTextureHeightMapProgram.doClear = false;
+
 
     TextureOperation buildDeltaSnowSSBOBufferOperation = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F);
     buildDeltaSnowSSBOBufferOperation.doClear = false;
 
+    // Tell it not to create a texture tho
     TextureOperation combineSSBOWithHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/combineSSBOWithHeightmapFS.glsl"), TextureFormat::R32UI);
+    combineSSBOWithHeightmap.fbo.setOutputTexture(copyTextureHeightMapProgram.getTextureResult());
+    if (useSSBO) {
+        ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
+    }
+    combineSSBOWithHeightmap.doClear = false;
+
+    
+
 
     ErosionOperation calcAvgHeight = ErosionOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale);
     calcAvgHeight.doClear = false;
@@ -246,6 +261,10 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     evenOutHeights.terrainSize = terrainSize;
     evenOutHeights.slopeThreshold = slopeThreshold;
     TextureOperation erosionResultToHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/RGBA32UI_TO_R32UI.glsl"), TextureFormat::R32UI);
+    erosionResultToHeightmap.fbo.setOutputTexture(copyTextureHeightMapProgram.getTextureResult());
+    if (!useSSBO) {
+        ground.heightmap = erosionResultToHeightmap.getTextureResult();
+    }
     erosionResultToHeightmap.doClear = false;
 
     // SSBO even out steep slopes
@@ -272,11 +291,7 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     CreatePenetrationTexture createPenetartionTextureOperation = CreatePenetrationTexture(heightmapSize, heightmapSize, createPenetrationTextureShader, TextureFormat::RGBA32I, frustumHeight, heightColumnScale);
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(heightmapSize, heightmapSize, shaderProgramLowpass, 4, TextureFormat::RGBA16F);
 
-    // When updating the scene, only a subpart of the heightmap is updates. So we must
-    // begin by storing the entire heightmap in this framebuffer
-    copyTextureHeightMapProgram.execute(ground.heightmap, 0);
-    ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
-    copyTextureHeightMapProgram.doClear = false;
+
 
     calculateNormalsOperation.execute(ground.heightmap, 0);
     blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
@@ -285,7 +300,6 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
     blurSnowHeightmap.doClear = false;
 
     calculateNormalsOperation.doClear = false;
-    copyTextureProgram.doClear = false; // true?
     copyTextureHeightMapProgram.doClear = false;
     blurSnowHeightmap.doClear = false;
 
@@ -309,6 +323,11 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
 
     cout << "Initial volume of terrain: " << endl;
     readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+
+
+    cout << "Initial volume of terrain SSBO: " << endl;
+    readBackAndAccumulatePixelValue(combineSSBOWithHeightmap.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+
 
     Timing timing{};
 
@@ -401,15 +420,13 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
 
         timing.begin("JUMPFLOODING");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
-            // jumpFloodInitOperation.activeArea = activeAreas[i];
-            // jumpFloodInitOperation.execute(createPenetartionTextureOperation.getTextureResult(), obsticleMap);
             jumpFloodMainOperation.activeArea = activeAreas[i];
             jumpFloodMainOperation.passIndex = 0;
             jumpFloodMainOperation.execute(createPenetartionTextureOperation.getTextureResult(), 0);
         }
         timing.end("JUMPFLOODING");
 
-        const bool useSSBO = false;
+        
 
         // SSBO approach
         if (useSSBO) {
@@ -463,21 +480,14 @@ glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::v
                         evenOutHeights.execute(calcAvgHeight.getTextureResult(), 0);
                         calcAvgHeightInput = evenOutHeights.getTextureResult();
                     }
+
+                    erosionResultToHeightmap.activeArea = activeAreas[i];
+                    erosionResultToHeightmap.execute(evenOutHeights.getTextureResult(), 0);
                 }
-                erosionResultToHeightmap.execute(evenOutHeights.getTextureResult(), 0);
                 ground.heightmap = erosionResultToHeightmap.getTextureResult();
             }
             timing.end("ITERATIVE_EVEN_OUT");
         }
-
-        // Write updates to the FBO for the final heightmap
-        timing.begin("COPY_TO_NEW_HEIGHTMAP");
-        for (unsigned i = 0; i < activeAreas.size(); i++) {
-            copyTextureHeightMapProgram.activeArea = activeAreas[i];
-            copyTextureHeightMapProgram.execute(ground.heightmap, 0);
-        }
-        ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
-        timing.end("COPY_TO_NEW_HEIGHTMAP");
 
         timing.begin("NORMAL_MACRO_BLUR");
         blurSnowHeightmap.timesRepeat = numIterationsBlurNormals;

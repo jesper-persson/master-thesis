@@ -12,22 +12,15 @@ enum class TextureFormat {
 
 class FBOWrapper
 {
-  public:
+public:
     GLuint fboId;
     GLuint textureId;
 
-    void setNearestNeighbour()
-    {
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
-
-    void setLinear()
-    {
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    void setOutputTexture(GLuint textureId) {
+        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureId, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        this->textureId = textureId;
     }
 };
 
