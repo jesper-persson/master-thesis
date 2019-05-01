@@ -169,8 +169,8 @@ public:
 
         glActiveTexture(GL_TEXTURE2);
 	    glBindTexture(GL_TEXTURE_2D, normalmapMacro);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glUniform1i(glGetUniformLocation(shaderProgram, "normalMapMacro"), 2);
 
         glActiveTexture(GL_TEXTURE3);

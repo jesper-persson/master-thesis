@@ -7,6 +7,8 @@ uniform usampler2D texture2; // Heightmap texture
 uniform int textureWidth;
 uniform int textureHeight;
 
+uniform float compression;
+
 in vec2 texCoordInFS;
 
 layout(std430, binding = 2) buffer snowBuffer
@@ -50,11 +52,9 @@ void main() {
 
     // data[indexMe] += int(penetration * 10000);
 
-    float compression = 1;
-
     // if (texCoordInFS.x > 0.25 && texCoordInFS.x < 0.65 && texCoordInFS.y > 0.25 && texCoordInFS.y < 0.75) {
         atomicAdd(data[indexMe], -int(penetration) + int(heightmapValue));
-        atomicAdd(data[indexCloest], int(penetration * compression));
+        atomicAdd(data[indexCloest], int(penetration * (1 - compression)));
 
         // data[indexMe] = 1 * 100000;
     // }

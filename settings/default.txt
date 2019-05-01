@@ -1,7 +1,7 @@
 terrainSize=80.0f
 numVerticesPerRow=256
 evenOutSteepSlopes=true
-compression=1.0f;
+compression=0.0f;
 roughness=0.02f
 slopeThreshold=0.9f
 numIterationsBlurNormals=1

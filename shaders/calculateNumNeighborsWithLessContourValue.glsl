@@ -13,6 +13,8 @@ uniform int textureHeight; // Not used, since we assume square
 
 in vec2 texCoordInFS;
 
+uniform float compression;
+
 /**
  * r: num neighbours with less contour value
  * g: -
@@ -28,6 +30,7 @@ vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), ve
 void main() {
     ivec4 current = texture(texture1, texCoordInFS);
     float step = float(1)/textureWidth;
+    int penetration = current.w;
 
     int numNeighboursWithLessDistance = 0;
     for (int i = 0; i < offsetSize; i++) {
@@ -41,9 +44,12 @@ void main() {
         }
     }
 
+    int offset = -int(penetration * compression);
+    penetration = int((1 - compression) * penetration);
+
     if (current.z < -1) {
-        numNeighboursWithLessDistance = 0;   
+        numNeighboursWithLessDistance = 0;
     }
 
-    colorFS = ivec4(numNeighboursWithLessDistance, 0, current.z, current.w);
+    colorFS = ivec4(numNeighboursWithLessDistance, offset, current.z, penetration);
 }

@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     copyTextureHeightMapProgram.doClear = false;
 
 
-    TextureOperation buildDeltaSnowSSBOBufferOperation = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F);
+    DistributeSnowSSBO buildDeltaSnowSSBOBufferOperation = DistributeSnowSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F, compression);
     buildDeltaSnowSSBOBufferOperation.doClear = false;
 
     // Tell it not to create a texture tho
@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
     ssboEvenOutSlopes.roughness = roughness;
 
     // Iterative move penetrated terrain material
-    TextureOperation calculateNumNeighborsWithLessContourValue = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/calculateNumNeighborsWithLessContourValue.glsl"), TextureFormat::RGBA32I);
+    CalculateNumNeighbors calculateNumNeighborsWithLessContourValue = CalculateNumNeighbors(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/calculateNumNeighborsWithLessContourValue.glsl"), TextureFormat::RGBA32I, compression);
     calculateNumNeighborsWithLessContourValue.doClear = false;
     PingPongTextureOperation distributeToLowerContourValues = PingPongTextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl"), numIterationsDisplaceMaterialToContour, TextureFormat::RGBA32I);
     distributeToLowerContourValues.doClear = false;

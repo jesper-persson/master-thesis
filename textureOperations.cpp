@@ -291,3 +291,43 @@ public:
         TextureOperation::bindUniforms();
     }
 };
+
+
+class DistributeSnowSSBO : public TextureOperation {
+public:
+    float compression;
+
+    DistributeSnowSSBO() {
+
+    }
+
+    DistributeSnowSSBO(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->compression = compression;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "compression"), compression);
+        TextureOperation::bindUniforms();
+    }
+};
+
+
+class CalculateNumNeighbors : public TextureOperation {
+public:
+    float compression;
+
+    CalculateNumNeighbors() {
+
+    }
+
+    CalculateNumNeighbors(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->compression = compression;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "compression"), compression);
+        TextureOperation::bindUniforms();
+    }
+};
