@@ -31,7 +31,8 @@ float slope(float h1, float h2) {
     return atan(h2*1 - h1*1) / d;
 }
 
-const int heightColumnScale = 1000;
+uniform int heightColumnScale;
+uniform int frustumHeight;
 
 void main() {
     float step = float(1)/textureWidth;
@@ -52,7 +53,7 @@ void main() {
     textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
     textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
 
-    bool canReceiveSnow = currentObsticleFragment - currentH > 1000 || currentObsticleFragment > 9.9 * heightColumnScale;
+    bool canReceiveSnow = currentObsticleFragment - currentH > 1000 || currentObsticleFragment >(float(frustumHeight) - 0.1) * heightColumnScale;
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
@@ -61,7 +62,7 @@ void main() {
         uint h = neighbourTex.b;
         uint obsticleFragment = neighbourTex.a;
 
-        bool canTransferSnow = obsticleFragment - h > 1000 || obsticleFragment > 9.9 * heightColumnScale;
+        bool canTransferSnow = obsticleFragment - h > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
 
         // if (((neighbourTex.a - h) < 0.01 && neighbourTex.a <= 9.99 * heightColumnScale) || (currentTex.a  - currentH < 0.01 && currentTex.a <= 9.99 * heightColumnScale)) {
         //     continue;

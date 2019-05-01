@@ -22,7 +22,7 @@ out vec3 cameraPosWorldSpaceInFS;
 out mat3 TBNInFs;
 out mat4 invTransposeWorldToCamera;
 
-const int heightColumnScale = 1000; // TAke as uniform
+uniform int heightColumnScale;
 
 out vec3 shadowCoordInFS;
 

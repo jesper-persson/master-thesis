@@ -174,14 +174,17 @@ public:
 class CalculateNormalsOperation : public TextureOperation {
 public:
     float heightScale;
+    int heightColumnScale;
         
-    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale)
+    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale, int heightColumnScale)
         : TextureOperation(textureWidth, textureHeight, shaderProgram, TextureFormat::RGBA16F) {
         this->heightScale = heightScale;
+        this->heightColumnScale = heightColumnScale;
     }
 
     void bindUniforms() override {
         glUniform1f(glGetUniformLocation(shaderProgram, "heightScale"), heightScale);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
         TextureOperation::bindUniforms();
     }
 };
@@ -191,20 +194,26 @@ public:
     float terrainSize;
     float slopeThreshold;
     float roughness;
+    int heightColumnScale;
+    int frustumHeight;
 
     ErosionOperation() {
 
     }
 
-    ErosionOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat)
+    ErosionOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
         terrainSize = 1;
+        this->frustumHeight = frustumHeight;
+        this->heightColumnScale = heightColumnScale;
     }
 
     void bindUniforms() override {
         glUniform1f(glGetUniformLocation(shaderProgram, "terrainSize"), terrainSize);
         glUniform1f(glGetUniformLocation(shaderProgram, "slopeThreshold"), slopeThreshold);
         glUniform1f(glGetUniformLocation(shaderProgram, "roughness"), roughness);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
+        glUniform1i(glGetUniformLocation(shaderProgram, "frustumHeight"), frustumHeight);
         TextureOperation::bindUniforms();
     }
 };
@@ -234,21 +243,51 @@ public:
 class PrepareTextureForCalcAvg : public TextureOperation {
 public:
     GLuint obstacleMap;
+    int frustumHeight;
+    int heightColumnScale;
 
     PrepareTextureForCalcAvg() {
 
     }
 
-    PrepareTextureForCalcAvg(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat)
+    PrepareTextureForCalcAvg(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->frustumHeight = frustumHeight;
+        this->heightColumnScale = heightColumnScale;
     }
 
     void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "frustumHeight"), frustumHeight);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
+
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, obstacleMap);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
         glUniform1i(glGetUniformLocation(shaderProgram, "texture3"), 2);
+        TextureOperation::bindUniforms();
+    }
+};
+
+
+class CreatePenetrationTexture : public TextureOperation {
+public:
+    int frustumHeight;
+    int heightColumnScale;
+
+    CreatePenetrationTexture() {
+
+    }
+
+    CreatePenetrationTexture(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->frustumHeight = frustumHeight;
+        this->heightColumnScale = heightColumnScale;
+    }
+
+    void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "frustumHeight"), frustumHeight);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
         TextureOperation::bindUniforms();
     }
 };

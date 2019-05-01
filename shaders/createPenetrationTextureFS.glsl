@@ -9,7 +9,8 @@ uniform int textureWidth;
 
 out ivec4 result;
 
-const int heightColumnScale = 1000;
+uniform int heightColumnScale;
+uniform int frustumHeight;
 
 
 vec2 texCoordToCoordinate(vec2 texCoord) {
@@ -17,9 +18,8 @@ vec2 texCoordToCoordinate(vec2 texCoord) {
 }
 
 void main() {
-    float verticalScale = 10; // Should be uniform
     float depthValue = texture(texture1, texCoordInFS).r;
-    uint depthHeight = uint(depthValue * verticalScale * heightColumnScale);
+    uint depthHeight = uint(depthValue * frustumHeight * heightColumnScale);
 
     uint heightmapValue = uint(texture(texture2, texCoordInFS).r);
     // float heightmapValue = texture(texture2, texCoordInFS).r;

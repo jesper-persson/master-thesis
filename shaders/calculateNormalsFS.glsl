@@ -6,14 +6,15 @@ uniform int textureWidth;
 uniform int textureHeight;
 
 // Scales the value read from the pixel to account for the fact that the
-// with between two pixels is assumed to be 1.
+// width between two pixels is assumed to be 1.
 uniform float heightScale;
+
+uniform int heightColumnScale; 
 
 in vec2 texCoordInFS;
 
 out vec4 result;
 
-const int heightColumnScale = 1000; 
 
 void main() {
     float hx = 1/float(textureWidth);

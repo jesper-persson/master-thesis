@@ -128,6 +128,8 @@ public:
     GLuint shadowMap;
     glm::mat4 depthBiasMVP;
 
+    int heightColumnScale;
+
     // SSAO 
     int numSamples = 0;
     glm::vec3 *samples;
@@ -176,33 +178,36 @@ public:
         glUniform1i(glGetUniformLocation(shaderProgram, "normalMap"), 3);
 
         glUniform1i(glGetUniformLocation(shaderProgram, "normalMapRepeat"), 8);
-
-        // SSAO
-        glActiveTexture(GL_TEXTURE4);
-	    glBindTexture(GL_TEXTURE_2D, ssaoMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "ssaoMap"), 4);
-
-        glActiveTexture(GL_TEXTURE5);
-	    glBindTexture(GL_TEXTURE_2D, randomTexture);
-        glUniform1i(glGetUniformLocation(shaderProgram, "noiseSSAO"), 5);
-
-        // Push kernel
-        for (int i = 0; i < numSamples; i++) {
-            std::string uniform = "kernel[";
-            uniform.append(std::to_string(i));
-            uniform.append("]");
-            glUniform3f(glGetUniformLocation(shaderProgram, uniform.c_str()), samples[i].x, samples[i].y, samples[i].z);
-        }
-
-        glActiveTexture(GL_TEXTURE6);
-	    glBindTexture(GL_TEXTURE_2D, occlusionMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "occlusionMap"), 6);
-
-        glActiveTexture(GL_TEXTURE7);
-	    glBindTexture(GL_TEXTURE_2D, shadowMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "shadowMap"), 7);
         
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "depthBiasMVP"), 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
+
+
+        // // SSAO
+        // glActiveTexture(GL_TEXTURE4);
+	    // glBindTexture(GL_TEXTURE_2D, ssaoMap);
+        // glUniform1i(glGetUniformLocation(shaderProgram, "ssaoMap"), 4);
+
+        // glActiveTexture(GL_TEXTURE5);
+	    // glBindTexture(GL_TEXTURE_2D, randomTexture);
+        // glUniform1i(glGetUniformLocation(shaderProgram, "noiseSSAO"), 5);
+
+        // // Push kernel
+        // for (int i = 0; i < numSamples; i++) {
+        //     std::string uniform = "kernel[";
+        //     uniform.append(std::to_string(i));
+        //     uniform.append("]");
+        //     glUniform3f(glGetUniformLocation(shaderProgram, uniform.c_str()), samples[i].x, samples[i].y, samples[i].z);
+        // }
+
+        // glActiveTexture(GL_TEXTURE6);
+	    // glBindTexture(GL_TEXTURE_2D, occlusionMap);
+        // glUniform1i(glGetUniformLocation(shaderProgram, "occlusionMap"), 6);
+
+        // glActiveTexture(GL_TEXTURE7);
+	    // glBindTexture(GL_TEXTURE_2D, shadowMap);
+        // glUniform1i(glGetUniformLocation(shaderProgram, "shadowMap"), 7);
+        
+        // glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "depthBiasMVP"), 1, GL_FALSE, glm::value_ptr(depthBiasMVP));
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

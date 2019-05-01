@@ -20,8 +20,8 @@ uniform float terrainSize;
 uniform float slopeThreshold;
 uniform float roughness;
 
-const int heightColumnScale = 1000;
-
+uniform int heightColumnScale;
+uniform int frustumHeight;
 
 in vec2 texCoordInFS;
 
@@ -74,7 +74,7 @@ void main() {
         uint obsticleFragment = neighbourTex.g ;
         uint h = neighbourTex.r;
 
-        bool canReceiveSnow = obsticleFragment - h > 1000 || obsticleFragment > 9.9 * heightColumnScale;
+        bool canReceiveSnow = obsticleFragment - h > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
         if (!canReceiveSnow) {
             continue;
         }
@@ -106,7 +106,7 @@ void main() {
     uint totalToRemove = 0;
     uint neighbourQuota = 0;
 
-    bool canTransferSnow = obsticleFragmentCurrent - currentHeight > 1000 || obsticleFragmentCurrent > 9.9 * heightColumnScale;
+    bool canTransferSnow = obsticleFragmentCurrent - currentHeight > 1000 || obsticleFragmentCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
 
     if (numWithTooHighSlope > 0.1  && canTransferSnow) { // && (!(obsticleFragmentCurrent - currentHeight < 1 * heightColumnScale) || obsticleFragmentCurrent > 9.99 * heightColumnScale))  {
         avgHeightDiff /= numWithTooHighSlope;

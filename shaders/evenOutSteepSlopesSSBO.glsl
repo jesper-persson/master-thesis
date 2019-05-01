@@ -11,7 +11,8 @@ uniform float slopeThreshold;
 
 in vec2 texCoordInFS;
 
-const int heightColumnScale = 1000;
+uniform int heightColumnScale;
+uniform int frustumHeight;
 
 layout(std430, binding = 2) buffer snowBuffer
 {
