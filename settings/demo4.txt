@@ -1,10 +1,10 @@
 terrainSize=80.0f
 numVerticesPerRow=80
-useErosion=true
+evenOutSteepSlopes=true
 compression=0.8f
 roughness=0.6f
 slopeThreshold=3.9f
-numBlurNormals=1
-numErosionStepsPerFrame=7
-numTimesToRunDistributeToCoutour=5
-textureSizeSnowHeightmap=500.0f
+numIterationsBlurNormals=1
+numIterationsEvenOutSlopes=7
+numIterationsDisplaceMaterialToContour=5
+heightmapSize=500.0f

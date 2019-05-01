@@ -8,14 +8,14 @@ using namespace std;
 
 extern float terrainSize;
 extern int numVerticesPerRow;
-extern bool useErosion;
+extern bool evenOutSteepSlopes;
 extern float compression;
 extern float roughness;
 extern float slopeThreshold;
-extern int numBlurNormals;
-extern int numErosionStepsPerFrame;
-extern int numTimesToRunDistributeToCoutour;
-extern float textureSizeSnowHeightmap;
+extern int numIterationsBlurNormals;
+extern int numIterationsEvenOutSlopes;
+extern int numIterationsDisplaceMaterialToContour;
+extern float heightmapSize;
 
 bool parseBoolean(string value)
 {
@@ -32,13 +32,13 @@ bool parseBoolean(string value)
 
 void applySetting(string setting, string stringValue)
 {
-    if (setting == "useErosion")
+    if (setting == "evenOutSteepSlopes")
     {
-        useErosion = parseBoolean(stringValue);
+        evenOutSteepSlopes = parseBoolean(stringValue);
     }
-    else if (setting == "numErosionStepsPerFrame")
+    else if (setting == "numIterationsEvenOutSlopes")
     {
-        numErosionStepsPerFrame = stoi(stringValue);
+        numIterationsEvenOutSlopes = stoi(stringValue);
     }
     else if (setting == "slopeThreshold")
     {
@@ -52,25 +52,25 @@ void applySetting(string setting, string stringValue)
     {
         roughness = stof(stringValue);
     }
-    else if (setting == "textureSizeSnowHeightmap")
+    else if (setting == "heightmapSize")
     {
-        textureSizeSnowHeightmap = stof(stringValue);
+        heightmapSize = stof(stringValue);
     }
     else if (setting == "terrainSize")
     {
         terrainSize = stoi(stringValue);
     }
-    else if (setting == "numBlurNormals")
+    else if (setting == "numIterationsBlurNormals")
     {
-        numBlurNormals = stof(stringValue);
+        numIterationsBlurNormals = stof(stringValue);
     }
     else if (setting == "numVerticesPerRow")
     {
         numVerticesPerRow = stof(stringValue);
     }
-    else if (setting == "numTimesToRunDistributeToCoutour")
+    else if (setting == "numIterationsDisplaceMaterialToContour")
     {
-        numTimesToRunDistributeToCoutour = stof(stringValue);
+        numIterationsDisplaceMaterialToContour = stof(stringValue);
     }
     else
     {
@@ -98,6 +98,5 @@ void applySettings(string settingFile)
         getline(buffer, setting, '=');
         getline(buffer, value);
         applySetting(setting, value);
-        // cout << setting + ", " + value;
     }
 }

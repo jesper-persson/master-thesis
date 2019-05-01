@@ -1,5 +1,5 @@
 terrainSize=100.0f
 numVerticesPerRow=75
-useErosion=false
-textureSizeSnowHeightmap=1000.0f
-numBlurNormals=1
+evenOutSteepSlopes=false
+heightmapSize=1000.0f
+numIterationsBlurNormals=1
