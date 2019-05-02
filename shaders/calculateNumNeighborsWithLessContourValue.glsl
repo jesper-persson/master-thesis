@@ -11,6 +11,12 @@ uniform isampler2D texture1;
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square
 
+// Allows to simulate part of texture
+uniform int activeWidth;
+uniform int activeHeight;
+uniform int activeCenterX;
+uniform int activeCenterY;
+
 in vec2 texCoordInFS;
 
 uniform float compression;
@@ -28,6 +34,11 @@ const int offsetSize = 8;
 vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
 
 void main() {
+    float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float minTexCoordY = (activeCenterY - activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+    float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+
     ivec4 current = texture(texture1, texCoordInFS);
     float step = float(1)/textureWidth;
     int penetration = current.w;
@@ -36,6 +47,9 @@ void main() {
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
         if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
+            continue;
+        }
+        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
             continue;
         }
         vec4 currentInner = texture(texture1, newTexCoord);

@@ -14,6 +14,12 @@ uniform int textureHeight; // Not used, since we assume square
 uniform float terrainSize;
 uniform float slopeThreshold;
 
+// Allows to simulate part of texture
+uniform int activeWidth;
+uniform int activeHeight;
+uniform int activeCenterX;
+uniform int activeCenterY;
+
 in vec2 texCoordInFS;
 
 /**
@@ -35,6 +41,11 @@ uniform int heightColumnScale;
 uniform int frustumHeight;
 
 void main() {
+    float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float minTexCoordY = (activeCenterY - activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+    float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+
     float step = float(1)/textureWidth;
     uvec4 currentTex = texture(texture1, texCoordInFS);
     uint currentH = currentTex.b;
@@ -57,7 +68,10 @@ void main() {
 
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-
+        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
+            continue;
+        }
+        
         uvec4 neighbourTex = textureValues[i];
         uint h = neighbourTex.b;
         uint obsticleFragment = neighbourTex.a;

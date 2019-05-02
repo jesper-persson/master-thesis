@@ -115,10 +115,16 @@ void setActiveAreaForObject(glm::vec3 &terrainOrigin, float terrainSize, glm::ve
     glm::vec3 diff = (positionOfObject - terrainOrigin) * ratio;
     int size = boundingBoxSize.x * ratio * boundingBoxMargin;
 
+    int posX = (int)(diff.x);
+    int posZ = (int)(diff.z);
+
     if (size % 2 != 0) {
         size += 1;
     }
-    activeAreas.push_back(ActiveArea(diff.x, diff.z, size, size));
+
+    // // cout << posX << ", " << posZ << " , " << size << " ,  " << size << endl;
+
+    activeAreas.push_back(ActiveArea(posX, posZ, size, size));
 }
 
 int main(int argc, char* argv[])
@@ -364,31 +370,45 @@ int main(int argc, char* argv[])
             worldToCamera = glm::lookAt(fromPosition, box.position, box.up);
         } else {
             controlObject(camera.position, camera.forward, camera.up, dt);
-            // box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
-            // box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
-            // box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
-            // box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+            box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
+            box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
+            box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
+            box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
-        // footstep.update(dt*1.0f);
+        footstep.update(dt*1.0f);
 
-        // box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
-        // box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
+        box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
+        box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
 
-        // tire.position.y = 6.5f;
-        // tire.position.z = -10.0f;
-        // tire.position.x += 1.0f * dt;
-        // tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
+        tire.position.y = 6.5f;
+        tire.position.z = -10.0f;
+        tire.position.x += 1.0f * dt;
+        tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
         timing.end("UPDATE_OBJECTS");
 
         // Update active areas
         timing.begin("UPDATE_ACTIVE_AREAS");
         // activeAreas.clear();
+        // // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
+        // // activeAreas.push_back(ActiveArea(0, 0, heightmapSize/8.1999f, heightmapSize/8.1999f));
         // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
+
+        // glm::vec3 eight = glm::vec3(8, -1, -1);
+        // glm::vec3 four = glm::vec3(4, -1, -1);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, eight, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, four, activeAreas);
+
+
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, hejhej2, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, hejhej, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box2.scale, activeAreas);
         // glm::vec3 sizeFootsteps = glm::vec3(2, 2, 2);
         // setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, sizeFootsteps, activeAreas);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, sizeFootsteps, activeAreas);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, footstep.box.position, sizeFootsteps, activeAreas);
+        // // setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
         // glm::vec3 sizeTires = glm::vec3(2, 2, 2);
         // setActiveAreaForObject(terrainOrigin, terrainSize, tire.position, sizeTires, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
@@ -421,6 +441,7 @@ int main(int argc, char* argv[])
         timing.begin("JUMPFLOODING");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             jumpFloodMainOperation.activeArea = activeAreas[i];
+            jumpFloodMainOperation.doClear = false;
             jumpFloodMainOperation.passIndex = 0;
             jumpFloodMainOperation.execute(createPenetartionTextureOperation.getTextureResult(), 0);
         }
@@ -458,14 +479,23 @@ int main(int argc, char* argv[])
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 calculateNumNeighborsWithLessContourValue.activeArea = activeAreas[i];
                 calculateNumNeighborsWithLessContourValue.execute(jumpFloodMainOperation.getTextureResult(), 0);
-
+            }
+            for (unsigned i = 0; i < activeAreas.size(); i++) {
                 distributeToLowerContourValues.activeArea = activeAreas[i];
                 distributeToLowerContourValues.execute(calculateNumNeighborsWithLessContourValue.getTextureResult(), 0);
-
+            }
+            for (unsigned i = 0; i < activeAreas.size(); i++) {
                 combineDistributedTerrainWithHeightmap.activeArea = activeAreas[i];
                 combineDistributedTerrainWithHeightmap.obstacleMap = obsticleMap;
                 combineDistributedTerrainWithHeightmap.execute(distributeToLowerContourValues.getTextureResult(), ground.heightmap);
             }
+            // TEMP
+            // for (unsigned i = 0; i < activeAreas.size(); i++) {
+                // erosionResultToHeightmap.activeArea = activeAreas[i];
+                // erosionResultToHeightmap.execute(combineDistributedTerrainWithHeightmap.getTextureResult(), 0);
+                // ground.heightmap = erosionResultToHeightmap.getTextureResult();
+            // }
+            // TEMP
             timing.end("ITERATIVE_MOVE_TO_CONTOUR");
 
             timing.begin("ITERATIVE_EVEN_OUT");
@@ -511,9 +541,9 @@ int main(int argc, char* argv[])
         footstep.render(shaderProgramDefault, worldToCamera, perspective);
 
         // Render helper quads
-        // quad.textureId = ...
+        quad.textureId = createPenetartionTextureOperation.getTextureResult();
         quad.render(shaderProgramQuad, unitMatrix, orthoUI);
-        quadLL.textureId = calculateNumNeighborsWithLessContourValue.getTextureResult();
+        quadLL.textureId = createPenetartionTextureOperation.getTextureResult();
         quadLL.render(shaderProgramQuad, unitMatrix, orthoUI);
         timing.end("RENDER_TO_SCREEN");
 
@@ -529,7 +559,7 @@ int main(int argc, char* argv[])
         }
 
         if (frameCounterGlobal % 100 == 0) {
-            timing.print();
+            // timing.print();
             readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 

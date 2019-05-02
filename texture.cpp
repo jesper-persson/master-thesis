@@ -12,6 +12,8 @@
 
 using namespace std;
 
+extern const int heightColumnScale;
+
 GLuint createTextureForPenetration(int size) {
 	GLuint textureId;
     glGenTextures(1, &textureId);

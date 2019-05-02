@@ -13,6 +13,12 @@ uniform int textureHeight;
 
 in vec2 texCoordInFS;
 
+// Allows to simulate part of texture
+uniform int activeWidth;
+uniform int activeHeight;
+uniform int activeCenterX;
+uniform int activeCenterY;
+
 /**
  * r: new penetration depth [-1,0]
  * g: new penetration depth [-1,0]
@@ -28,6 +34,11 @@ vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), ve
 void main() {
     float step = float(1)/textureWidth;
 
+    float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    float minTexCoordY = (activeCenterY - activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+    float maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+
     ivec4 current = texture(texture1, texCoordInFS);
     int penetration = current.w;
     int offset = current.y;
@@ -38,6 +49,9 @@ void main() {
     for (int i = 0; i < offsetSize; i++) {
         vec2 newCoord = texCoordInFS + offsets[i] * step * 1;
         if (newCoord.x < 0 || newCoord.x > 1 || newCoord.y < 0 || newCoord.y > 1) {
+            continue;
+        }
+        if (newCoord.x < minTexCoordX || newCoord.x > maxTexCoordX || newCoord.y < minTexCoordY || newCoord.y > maxTexCoordY) {
             continue;
         }
 
