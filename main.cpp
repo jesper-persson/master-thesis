@@ -370,21 +370,21 @@ int main(int argc, char* argv[])
             worldToCamera = glm::lookAt(fromPosition, box.position, box.up);
         } else {
             controlObject(camera.position, camera.forward, camera.up, dt);
-            box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
-            box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
-            box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
-            box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+            // box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
+            // box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
+            // box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
+            // box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
-        footstep.update(dt*1.0f);
+        // footstep.update(dt*1.0f);
 
-        box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
-        box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
+        // box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
+        // box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
 
-        tire.position.y = 6.5f;
-        tire.position.z = -10.0f;
-        tire.position.x += 1.0f * dt;
-        tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
+        // tire.position.y = 6.5f;
+        // tire.position.z = -10.0f;
+        // tire.position.x += 1.0f * dt;
+        // tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
         timing.end("UPDATE_OBJECTS");
 
         // Update active areas
@@ -461,7 +461,7 @@ int main(int argc, char* argv[])
             timing.begin("SSBO_EVEN_OUT");
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 for (int j = 0; j < numIterationsEvenOutSlopes; j++) {
-                    ssboEvenOutSlopes.execute(0, 0);
+                    ssboEvenOutSlopes.execute(obsticleMap, 0);
                 }
             }
 

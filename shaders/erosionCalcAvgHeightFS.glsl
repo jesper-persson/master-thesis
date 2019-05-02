@@ -1,9 +1,6 @@
 #version 420
 
-/**
-//  * (r, g, b): height value
-//  * a: obsticle value
- */
+
 uniform usampler2D texture1; // uint heihtmap
 
 
