@@ -13,7 +13,7 @@ in vec2 texCoordInFS;
 
 layout(std430, binding = 2) buffer snowBuffer
 {
-    int data[];
+    uint data[];
 };
 
 /**
@@ -35,7 +35,7 @@ void main() {
 
     // Move to SSBO location (given by my coordinates to closest )
     ivec4 cloestSeedI = texture(texture1, texCoordInFS).rgba;
-    int penetration = cloestSeedI.w; //texture(texture2, texCoordInFS).r;
+    uint penetration = uint(cloestSeedI.w); //texture(texture2, texCoordInFS).r;
     vec2 cloestSeed = vec2(float(cloestSeedI.x), float(cloestSeedI.y));
     vec2 myCoord = texCoordToCoordinate(texCoordInFS);
     vec2 dirClosest = cloestSeed - myCoord;
@@ -50,11 +50,15 @@ void main() {
     // Move my penetration to cloest seed
     //  data[indexCloest] += -int(penetration * 10000);
 
+
+
     // data[indexMe] += int(penetration * 10000);
 
+    // uint + int
+
     // if (texCoordInFS.x > 0.25 && texCoordInFS.x < 0.65 && texCoordInFS.y > 0.25 && texCoordInFS.y < 0.75) {
-        atomicAdd(data[indexMe], -int(penetration) + int(heightmapValue));
-        atomicAdd(data[indexCloest], int(penetration * (1 - compression)));
+        atomicAdd(data[indexMe], heightmapValue - penetration);
+        atomicAdd(data[indexCloest], uint(penetration * (1 - compression)));
 
         // data[indexMe] = 1 * 100000;
     // }

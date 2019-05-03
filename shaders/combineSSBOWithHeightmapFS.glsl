@@ -10,7 +10,7 @@ in vec2 texCoordInFS;
 
 layout(std430, binding = 2) buffer snowBuffer
 {
-    int data[];
+    uint data[];
 };
 
 // new height
@@ -26,10 +26,10 @@ void main() {
     vec2 coordinate = texCoordToCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
 
-    int ssboValue = data[index];
+    uint ssboValue = data[index];
     data[index] = 0;
 
     // uint height = texture(texture1, texCoordInFS).r;
 
-    outTexture = uint(ssboValue);
+    outTexture = ssboValue;
 }

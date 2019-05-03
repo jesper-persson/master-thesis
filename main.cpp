@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 10;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = false;
+const bool useSSBO = true;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -298,10 +298,9 @@ int main(int argc, char* argv[])
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
-    int* ssboDefaultValue = (int*)malloc(heightmapSize * heightmapSize * sizeof(int));
-    std::memset(ssboDefaultValue, 0, heightmapSize * heightmapSize * sizeof(int));
-    glBufferData(GL_SHADER_STORAGE_BUFFER, heightmapSize * heightmapSize * sizeof(int), ssboDefaultValue, GL_DYNAMIC_DRAW);
-    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    unsigned int* ssboDefaultValue = (unsigned int*)malloc(heightmapSize * heightmapSize * sizeof(unsigned int));
+    std::memset(ssboDefaultValue, 0, heightmapSize * heightmapSize * sizeof(unsigned int));
+    glBufferData(GL_SHADER_STORAGE_BUFFER, heightmapSize * heightmapSize * sizeof(unsigned int), ssboDefaultValue, GL_DYNAMIC_DRAW);
     free(ssboDefaultValue);
 
     // Active areas

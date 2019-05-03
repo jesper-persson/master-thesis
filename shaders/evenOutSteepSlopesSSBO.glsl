@@ -16,7 +16,7 @@ uniform int frustumHeight;
 
 layout(std430, binding = 2) buffer snowBuffer
 {
-    int data[];
+    uint data[];
 };
 
 vec2 texCoordToCoordinate(vec2 texCoord) {
@@ -36,7 +36,7 @@ bool withinBounds(int index) {
     return index >= 0 && index <= (textureWidth * textureWidth - 1);
 }
 
-bool canReceiveSnow(float obsticleValue, int height) {
+bool canReceiveSnow(float obsticleValue, uint height) {
     float obsticleFragment = obsticleValue * frustumHeight * heightColumnScale;
     return obsticleFragment - height > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
 }
@@ -46,7 +46,7 @@ const int numNeighbors = 8;
 void main() {
     vec2 coordinate = texCoordToCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
-    int ssboValue = data[index];
+    uint ssboValue = data[index];
 
     int indexMap[numNeighbors] = {
         index - textureWidth - 1,
@@ -59,7 +59,7 @@ void main() {
         index + textureWidth + 1
     };
 
-    int ssboValues[numNeighbors];
+    uint ssboValues[numNeighbors];
     float obstacleValue[numNeighbors];
     for (int i = 0; i < numNeighbors; i++) {
         if (withinBounds(indexMap[i])) {
@@ -68,8 +68,8 @@ void main() {
         }
     }
 
-    int avgHeightDiff = 0;
-    int numNeighborsWithTooGreatSlope = 0;
+    uint avgHeightDiff = 0;
+    uint numNeighborsWithTooGreatSlope = 0;
     for (int i = 0; i < numNeighbors; i++) {
         if (!withinBounds(indexMap[i])) {
             continue;
@@ -86,8 +86,8 @@ void main() {
 
     if (numNeighborsWithTooGreatSlope > 0) {
         avgHeightDiff = avgHeightDiff / numNeighborsWithTooGreatSlope;
-        avgHeightDiff = int(avgHeightDiff * roughness);
-        int numHeightToGivePerNeighbor = avgHeightDiff / numNeighborsWithTooGreatSlope;
+        avgHeightDiff = uint(avgHeightDiff * roughness);
+        uint numHeightToGivePerNeighbor = avgHeightDiff / numNeighborsWithTooGreatSlope;
 
         atomicAdd(data[index], -numNeighborsWithTooGreatSlope * numHeightToGivePerNeighbor);
         for (int i = 0; i < numNeighbors; i++) {
