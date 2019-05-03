@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 10;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = true;
+const bool useSSBO = false;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -240,11 +240,9 @@ int main(int argc, char* argv[])
     // begin by storing the entire heightmap in this framebuffer
     copyTextureHeightMapProgram.execute(ground.heightmap, 0);
     ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
-    copyTextureHeightMapProgram.doClear = false;
 
 
     DistributeSnowSSBO buildDeltaSnowSSBOBufferOperation = DistributeSnowSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F, compression);
-    buildDeltaSnowSSBOBufferOperation.doClear = false;
 
     // Tell it not to create a texture tho
     TextureOperation combineSSBOWithHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/combineSSBOWithHeightmapFS.glsl"), TextureFormat::R32UI);
@@ -252,18 +250,15 @@ int main(int argc, char* argv[])
     if (useSSBO) {
         ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
     }
-    combineSSBOWithHeightmap.doClear = false;
 
     
 
 
     ErosionOperation calcAvgHeight = ErosionOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale);
-    calcAvgHeight.doClear = false;
     calcAvgHeight.terrainSize = terrainSize;
     calcAvgHeight.slopeThreshold = slopeThreshold;
     calcAvgHeight.roughness = roughness;
     ErosionOperation evenOutHeights = ErosionOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionFS.glsl"), TextureFormat::RG32UI, frustumHeight, heightColumnScale);
-    evenOutHeights.doClear = false;
     evenOutHeights.terrainSize = terrainSize;
     evenOutHeights.slopeThreshold = slopeThreshold;
     TextureOperation erosionResultToHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/RGBA32UI_TO_R32UI.glsl"), TextureFormat::R32UI);
@@ -271,22 +266,17 @@ int main(int argc, char* argv[])
     if (!useSSBO) {
         ground.heightmap = erosionResultToHeightmap.getTextureResult();
     }
-    erosionResultToHeightmap.doClear = false;
 
     // SSBO even out steep slopes
     ErosionOperation ssboEvenOutSlopes = ErosionOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/evenOutSteepSlopesSSBO.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale);
-    ssboEvenOutSlopes.doClear = false;
     ssboEvenOutSlopes.terrainSize = terrainSize;
     ssboEvenOutSlopes.slopeThreshold = slopeThreshold;
     ssboEvenOutSlopes.roughness = roughness;
 
     // Iterative move penetrated terrain material
     CalculateNumNeighbors calculateNumNeighborsWithLessContourValue = CalculateNumNeighbors(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/calculateNumNeighborsWithLessContourValue.glsl"), TextureFormat::RGBA32I, compression);
-    calculateNumNeighborsWithLessContourValue.doClear = false;
     PingPongTextureOperation distributeToLowerContourValues = PingPongTextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl"), numIterationsDisplaceMaterialToContour, TextureFormat::RGBA32I);
-    distributeToLowerContourValues.doClear = false;
     PrepareTextureForCalcAvg combineDistributedTerrainWithHeightmap = PrepareTextureForCalcAvg(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/combineDistributedTerrainWithHeightmap.glsl"), TextureFormat::RG32UI, frustumHeight, heightColumnScale);
-    combineDistributedTerrainWithHeightmap.doClear = false;
 
 
 
@@ -302,12 +292,6 @@ int main(int argc, char* argv[])
     calculateNormalsOperation.execute(ground.heightmap, 0);
     blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
     ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
-    calculateNormalsOperation.doClear = false;
-    blurSnowHeightmap.doClear = false;
-
-    calculateNormalsOperation.doClear = false;
-    copyTextureHeightMapProgram.doClear = false;
-    blurSnowHeightmap.doClear = false;
 
     // SSBO for snow distribution
     GLuint ssbo;
@@ -433,7 +417,6 @@ int main(int argc, char* argv[])
         timing.begin("PENETRATION_TEXTURE_CALC");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             createPenetartionTextureOperation.activeArea = activeAreas[i];
-            createPenetartionTextureOperation.doClear = false;
             createPenetartionTextureOperation.execute(fboSnowCoverDepth.textureId, ground.heightmap);
         }
         timing.end("PENETRATION_TEXTURE_CALC");
@@ -441,7 +424,6 @@ int main(int argc, char* argv[])
         timing.begin("JUMPFLOODING");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             jumpFloodMainOperation.activeArea = activeAreas[i];
-            jumpFloodMainOperation.doClear = false;
             jumpFloodMainOperation.passIndex = 0;
             jumpFloodMainOperation.execute(createPenetartionTextureOperation.getTextureResult(), 0);
         }

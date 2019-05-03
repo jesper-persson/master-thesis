@@ -57,7 +57,7 @@ public:
 
         fbo = createFrameBufferSingleTexture(textureWidth, textureHeight, internalformat);
 
-        doClear = true;
+        doClear = false;
         this->sampling = GL_NEAREST;
     }
 
@@ -110,8 +110,6 @@ public:
         glClearColor(0, 0.1, 0.5, 1);
         glDisable(GL_DEPTH_TEST);
 
-        // glClear(GL_DEPTH_BUFFER_BIT);
-        
         if (doClear) {
             glClear(GL_COLOR_BUFFER_BIT);
         }
