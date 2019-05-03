@@ -195,9 +195,9 @@ int main(int argc, char* argv[])
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("images/white.png");
     ground.normalmap = loadPNGTexture("images/normalmap2.png");
-    ground.heightmap = createTextureForHeightmap(heightmapSize);
     ground.heightColumnScale = heightColumnScale;
-    // ground.heightmap = loadPNGTexture("images/heightmap2.png");
+    // ground.heightmap = createTextureForHeightmap(heightmapSize);
+    ground.heightmap = loadPNGTextureForHeightmap("images/heightmap2.png");
 
     Camera camera;
 
@@ -235,18 +235,18 @@ int main(int argc, char* argv[])
 
     float heightScale = heightmapSize / terrainSize;
     CalculateNormalsOperation calculateNormalsOperation = CalculateNormalsOperation(heightmapSize, heightmapSize, shaderProgramCalculateNormals, heightScale, heightColumnScale);
-    TextureOperation copyTextureHeightMapProgram = TextureOperation(heightmapSize, heightmapSize, shaderProgramCopyTexture, TextureFormat::R32UI);
+    CreateInitialHeightmapTexture createInitialHeightmapTexture = CreateInitialHeightmapTexture(heightmapSize, heightmapSize, shaderProgramCopyTexture, TextureFormat::R32UI, frustumHeight, heightColumnScale);
     // When updating the scene, only a subpart of the heightmap is updates. So we must
     // begin by storing the entire heightmap in this framebuffer
-    copyTextureHeightMapProgram.execute(ground.heightmap, 0);
-    ground.heightmap = copyTextureHeightMapProgram.getTextureResult();
+    createInitialHeightmapTexture.execute(ground.heightmap, 0);
+    ground.heightmap = createInitialHeightmapTexture.getTextureResult();
 
 
     DistributeSnowSSBO buildDeltaSnowSSBOBufferOperation = DistributeSnowSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F, compression);
 
     // Tell it not to create a texture tho
     TextureOperation combineSSBOWithHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/combineSSBOWithHeightmapFS.glsl"), TextureFormat::R32UI);
-    combineSSBOWithHeightmap.fbo.setOutputTexture(copyTextureHeightMapProgram.getTextureResult());
+    combineSSBOWithHeightmap.fbo.setOutputTexture(createInitialHeightmapTexture.getTextureResult());
     if (useSSBO) {
         ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
     }
@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
     evenOutHeights.terrainSize = terrainSize;
     evenOutHeights.slopeThreshold = slopeThreshold;
     TextureOperation erosionResultToHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/RGBA32UI_TO_R32UI.glsl"), TextureFormat::R32UI);
-    erosionResultToHeightmap.fbo.setOutputTexture(copyTextureHeightMapProgram.getTextureResult());
+    erosionResultToHeightmap.fbo.setOutputTexture(createInitialHeightmapTexture.getTextureResult());
     if (!useSSBO) {
         ground.heightmap = erosionResultToHeightmap.getTextureResult();
     }
@@ -286,11 +286,9 @@ int main(int argc, char* argv[])
     GLuint createPenetrationTextureShader = createShaderProgram("shaders/basicVS.glsl", "shaders/createPenetrationTextureFS.glsl");
     CreatePenetrationTexture createPenetartionTextureOperation = CreatePenetrationTexture(heightmapSize, heightmapSize, createPenetrationTextureShader, TextureFormat::RGBA32I, frustumHeight, heightColumnScale);
     PingPongTextureOperation blurSnowHeightmap = PingPongTextureOperation(heightmapSize, heightmapSize, shaderProgramLowpass, 4, TextureFormat::RGBA16F);
+    blurSnowHeightmap.sampling = GL_LINEAR;
+    blurSnowHeightmap.inputTexturesAreFloat = true;
 
-
-
-    calculateNormalsOperation.execute(ground.heightmap, 0);
-    blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
     ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
 
     // SSBO for snow distribution
@@ -311,7 +309,7 @@ int main(int argc, char* argv[])
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
 
     cout << "Initial volume of terrain: " << endl;
-    readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+    readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
 
 
     cout << "Initial volume of terrain SSBO: " << endl;
@@ -536,12 +534,12 @@ int main(int argc, char* argv[])
         timing.end("SWAP_BUFFERS");
 
         if (frameCounterGlobal == 0) {
-            // readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+            // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 
         if (frameCounterGlobal % 100 == 0) {
             // timing.print();
-            readBackAndAccumulatePixelValue(copyTextureHeightMapProgram.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+            readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 
         frameCounterGlobal++;

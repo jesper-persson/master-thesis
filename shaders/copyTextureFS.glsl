@@ -1,11 +1,14 @@
 #version 400
 
-uniform usampler2D texture1;
+uniform sampler2D texture1;
 
 in vec2 texCoordInFS;
 
 out uint result;
 
+uniform int heightColumnScale;
+uniform int frustumHeight;
+
 void main() {
-    result = texture(texture1, texCoordInFS).r;
+    result = uint(texture(texture1, texCoordInFS).r * frustumHeight * heightColumnScale);
 }

@@ -44,6 +44,8 @@ public:
     // Should be either GL_NEAREST or GL_LINEAR
     GLint sampling;
 
+    bool inputTexturesAreFloat;
+
     TextureOperation() {
         
     }
@@ -58,7 +60,8 @@ public:
         fbo = createFrameBufferSingleTexture(textureWidth, textureHeight, internalformat);
 
         doClear = false;
-        this->sampling = GL_NEAREST;
+        sampling = GL_NEAREST;
+        inputTexturesAreFloat = false;
     }
 
     void setSampling(GLint sampling) {
@@ -96,14 +99,24 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureInput1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        if (inputTexturesAreFloat) {
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        } else {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        }
         glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureInput2);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        if (inputTexturesAreFloat) {
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        } else {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling);
+        }
         glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1);
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.fboId);
@@ -326,6 +339,28 @@ public:
 
     void bindUniforms() override {
         glUniform1f(glGetUniformLocation(shaderProgram, "compression"), compression);
+        TextureOperation::bindUniforms();
+    }
+};
+
+class CreateInitialHeightmapTexture : public TextureOperation {
+public:
+    int frustumHeight;
+    int heightColumnScale;
+
+    CreateInitialHeightmapTexture() {
+
+    }
+
+    CreateInitialHeightmapTexture(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->frustumHeight = frustumHeight;
+        this->heightColumnScale = heightColumnScale;
+    }
+
+    void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "frustumHeight"), frustumHeight);
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
         TextureOperation::bindUniforms();
     }
 };

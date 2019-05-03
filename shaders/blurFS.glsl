@@ -1,7 +1,6 @@
 #version 400
 
 uniform sampler2D texture1;
-uniform sampler2D texture2;
 uniform int textureWidth;
 uniform int textureHeight;
 

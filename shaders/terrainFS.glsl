@@ -58,7 +58,7 @@ void main() {
     vec3 directionToLight = -1*lightDir;
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
-    float ambient = 0.78;
+    float ambient = 0.18;
     float diffuseAmount = 0.25;
     float specularAmount = 0.01;
     vec4 color = vec4(0.98, 0.98, 1, 1);
