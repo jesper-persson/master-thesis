@@ -105,7 +105,7 @@ void main() {
 
     bool canTransferSnow = obsticleFragmentCurrent - currentHeight > 1000 || obsticleFragmentCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
 
-    if (numWithTooHighSlope > 0.1  && canTransferSnow) { // && (!(obsticleFragmentCurrent - currentHeight < 1 * heightColumnScale) || obsticleFragmentCurrent > 9.99 * heightColumnScale))  {
+    if (numWithTooHighSlope > 0  && canTransferSnow) { // && (!(obsticleFragmentCurrent - currentHeight < 1 * heightColumnScale) || obsticleFragmentCurrent > 9.99 * heightColumnScale))  {
         avgHeightDiff /= numWithTooHighSlope;
         avgHeightDiff = uint(avgHeightDiff * roughness);
 
