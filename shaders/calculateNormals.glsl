@@ -15,7 +15,6 @@ in vec2 texCoordInFS;
 
 out vec4 result;
 
-
 void main() {
     float hx = 1/float(textureWidth);
     float hy = 1/float(textureHeight);

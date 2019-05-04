@@ -182,12 +182,12 @@ public:
     }
 };
 
-class CalculateNormalsOperation : public TextureOperation {
+class CalculateNormals : public TextureOperation {
 public:
     float heightScale;
     int heightColumnScale;
         
-    CalculateNormalsOperation(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale, int heightColumnScale)
+    CalculateNormals(int textureWidth, int textureHeight, GLuint shaderProgram, float heightScale, int heightColumnScale)
         : TextureOperation(textureWidth, textureHeight, shaderProgram, TextureFormat::RGBA16F) {
         this->heightScale = heightScale;
         this->heightColumnScale = heightColumnScale;
@@ -200,7 +200,7 @@ public:
     }
 };
 
-class ErosionOperation : public TextureOperation {
+class EvenOutSteepSlopes : public TextureOperation {
 public:
     float terrainSize;
     float slopeThreshold;
@@ -208,11 +208,11 @@ public:
     int heightColumnScale;
     int frustumHeight;
 
-    ErosionOperation() {
+    EvenOutSteepSlopes() {
 
     }
 
-    ErosionOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
+    EvenOutSteepSlopes(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
         terrainSize = 1;
         this->frustumHeight = frustumHeight;
@@ -229,15 +229,15 @@ public:
     }
 };
 
-class JumpFloodingMainOperation : public PingPongTextureOperation {
+class JumpFlooding : public PingPongTextureOperation {
 public:
     int passIndex;
 
-    JumpFloodingMainOperation() {
+    JumpFlooding() {
 
     }
 
-    JumpFloodingMainOperation(GLuint textureWidth, GLuint textureHeight, GLuint program, int numRepeat)
+    JumpFlooding(GLuint textureWidth, GLuint textureHeight, GLuint program, int numRepeat)
     : PingPongTextureOperation(textureWidth, textureHeight, program, numRepeat, TextureFormat::RGBA32I) {
         passIndex = 0;
     }
@@ -251,17 +251,17 @@ public:
 
 
 
-class PrepareTextureForCalcAvg : public TextureOperation {
+class CombineDisplacedMaterialWithHeightmap : public TextureOperation {
 public:
     GLuint obstacleMap;
     int frustumHeight;
     int heightColumnScale;
 
-    PrepareTextureForCalcAvg() {
+    CombineDisplacedMaterialWithHeightmap() {
 
     }
 
-    PrepareTextureForCalcAvg(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
+    CombineDisplacedMaterialWithHeightmap(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
         this->frustumHeight = frustumHeight;
         this->heightColumnScale = heightColumnScale;
@@ -304,15 +304,15 @@ public:
 };
 
 
-class DistributeSnowSSBO : public TextureOperation {
+class DisplaceMaterialSSBO : public TextureOperation {
 public:
     float compression;
 
-    DistributeSnowSSBO() {
+    DisplaceMaterialSSBO() {
 
     }
 
-    DistributeSnowSSBO(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
+    DisplaceMaterialSSBO(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
         this->compression = compression;
     }
@@ -324,15 +324,15 @@ public:
 };
 
 
-class CalculateNumNeighbors : public TextureOperation {
+class CalculateNumNeighborsWithLessContourValue : public TextureOperation {
 public:
     float compression;
 
-    CalculateNumNeighbors() {
+    CalculateNumNeighborsWithLessContourValue() {
 
     }
 
-    CalculateNumNeighbors(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
+    CalculateNumNeighborsWithLessContourValue(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
         this->compression = compression;
     }

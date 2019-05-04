@@ -10,7 +10,7 @@ public:
         box = loadUsingTinyObjLoader("shoe.obj");
         box.textureId = loadPNGTexture("images/gray.png");
         box.scale = glm::vec3(0.006f, 0.006f, 0.006f);
-        box.position = glm::vec3(-48.0f, 4.5f, 20.0f);
+        box.position = glm::vec3(-48.0f, 10.5f, 20.0f);
         box.forward = glm::rotate(box.forward, -1.67f, box.up);
     }
 

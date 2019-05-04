@@ -1,8 +1,8 @@
 #version 420
 
 /**
- * This shader is used by the iterative algorithm for moving penetrated snow to the boundary.
- * Each column needs to know how many neighbors will receive its snow, since we cannot "scatter" snow.
+ * This shader is used by the iterative algorithm for moving penetrated material to the boundary.
+ * Each column needs to know how many neighbors will receive its material, since we cannot "scatter" material.
  */
 
 // Contains result of JumpFlood shader program.
@@ -21,13 +21,7 @@ in vec2 texCoordInFS;
 
 uniform float compression;
 
-/**
- * r: num neighbours with less contour value
- * g: -
- * b: contour value
- * a: penetration value
- */
-out ivec4 colorFS;
+out ivec4 outputValue;
 
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
@@ -46,10 +40,9 @@ void main() {
     int numNeighboursWithLessDistance = 0;
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-        if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
-            continue;
-        }
-        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
+        if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0 || 
+            newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY
+            ) {
             continue;
         }
         vec4 currentInner = texture(texture1, newTexCoord);
@@ -65,5 +58,5 @@ void main() {
         numNeighboursWithLessDistance = 0;
     }
 
-    colorFS = ivec4(numNeighboursWithLessDistance, offset, current.z, penetration);
+    outputValue = ivec4(numNeighboursWithLessDistance, offset, current.z, penetration);
 }

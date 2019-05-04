@@ -7,4 +7,4 @@ slopeThreshold=0.9f
 numIterationsBlurNormals=1
 numIterationsEvenOutSlopes=10
 numIterationsDisplaceMaterialToContour=13
-heightmapSize=1024.0f
+heightmapSize=512.0f

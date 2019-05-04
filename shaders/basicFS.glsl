@@ -9,12 +9,6 @@ uniform int useNormalMapping;
 uniform sampler2D normalMap;
 uniform int normalMapRepeat;
 
-/**
- * Use occlusionMap
- */
-uniform int useOcclusionMap;
-uniform sampler2D occlusionMap;
-
 in vec2 texCoordInFS;
 in vec3 normalInFS;
 in vec3 fragPosWorldSpaceInFS;
@@ -40,8 +34,6 @@ void main() {
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
     float ambient = 0.4;
-    float occlusion = 1 - texture(occlusionMap, gl_FragCoord.xy / vec2(WINDOW_WIDTH, WINDOW_HEIGHT)).r;
-    ambient = ambient - occlusion * ambient;
 
     // Diffuse
     float intensity = dot(normal, directionToLight);
