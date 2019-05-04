@@ -8,6 +8,8 @@ uniform sampler2D normalMapMacro;
 uniform mat4 worldToCamera;
 uniform mat4 projection;
 
+uniform int heightColumnScale;
+
 in vec3 fragPosWorldSpaceInTCS[];
 in vec2 texCoordInTCS[];
 in vec3 normalInTCS[];
@@ -16,38 +18,31 @@ out vec3 fragPosWorldSpaceInTES[];
 out vec2 texCoordInTES[];
 out vec3 normalInTES[];
 
-float getTessellationLevel(vec2 texCoord) {
+float getTerrainHeight(vec2 texCoord) {
     vec2 texCoordFlippedY = texCoord;
     texCoordFlippedY.y = -texCoordFlippedY.y;
     float sampledHeight = texture(heightmap, texCoordFlippedY).r;
-
-    // vec3 normal = normalize(texture(normalMapMacro, texCoordFlippedY).xyz);
-    // vec3 up = vec3(0, 1, 0); // is y up though?
-    // float res = 1 - abs(dot(normal, up)); // 0 when parallel, 1 when orthgonal
-    // float level = (res * 10 + 1);
-
     return sampledHeight;
 }
 
-float getTessellationFactor(vec3 p1, vec3 p2) {
-    float distanceSphere = length(p1 - p2);
-    vec3 origin = (p1 + p2) / 2;
+const int maxTessellation = 16;
+const int minTessellation = 1;
 
-    vec4 clipPosition = projection * worldToCamera * vec4(origin, 1);
-    float ll = abs(distanceSphere * projection[2][2] / clipPosition.w);
+const float distanceMaxTess = 15;
+const float distanceMinTess = 50;
 
-    float edgesPerScreenHeight = 20;
 
-    return clamp(ll * edgesPerScreenHeight, 1, 12);
-}
-
+// p1 and p2 are two endpoints of a edge
 float tessellationFromCameraDistance(vec3 p1, vec3 p2) {
     mat4 worldToCameraInv = inverse(worldToCamera);
     vec3 cameraPosWorldSpaceInFS = vec3(worldToCameraInv[3][0], worldToCameraInv[3][1], worldToCameraInv[3][2]);
     vec3 midPoint = (p1 + p2) / 2;
     float dist = length(midPoint - cameraPosWorldSpaceInFS);
-    float tessellationFactor = -1*dist + 20;
-    return clamp(tessellationFactor, 1, 64);
+
+    float slope = (minTessellation - maxTessellation)/(distanceMinTess - distanceMaxTess);
+    float tessellationFactor = slope*(dist - distanceMaxTess) + maxTessellation;
+
+    return clamp(tessellationFactor, minTessellation, maxTessellation);
 }
 
 void main()
@@ -56,9 +51,9 @@ void main()
     normalInTES[gl_InvocationID] = normalInTCS[gl_InvocationID];
     fragPosWorldSpaceInTES[gl_InvocationID] = fragPosWorldSpaceInTCS[gl_InvocationID];
 
-    float h1 = getTessellationLevel(texCoordInTES[0]);
-    float h2 = getTessellationLevel(texCoordInTES[1]);
-    float h3 = getTessellationLevel(texCoordInTES[2]);
+    float h1 = getTerrainHeight(texCoordInTES[0]) / float(heightColumnScale);
+    float h2 = getTerrainHeight(texCoordInTES[1]) / float(heightColumnScale);
+    float h3 = getTerrainHeight(texCoordInTES[2]) / float(heightColumnScale);
 
     vec3 v1 = fragPosWorldSpaceInTCS[0] + vec3(0, h1, 0);
     vec3 v2 = fragPosWorldSpaceInTCS[1] + vec3(0, h2, 0);
@@ -75,8 +70,8 @@ void main()
     gl_TessLevelOuter[2] = l1;
     gl_TessLevelInner[0] = i;
 
-    gl_TessLevelOuter[0] = 2;
-    gl_TessLevelOuter[1] = 2;
-    gl_TessLevelOuter[2] = 2;
-    gl_TessLevelInner[0] = 2;
+    // gl_TessLevelOuter[0] = 1;
+    // gl_TessLevelOuter[1] = 1;
+    // gl_TessLevelOuter[2] = 1;
+    // gl_TessLevelInner[0] = 1;
 }
