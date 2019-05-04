@@ -1,8 +1,5 @@
 #version 430
 
-// Heightmap
-// uniform usampler2D texture1;
-
 uniform int textureWidth;
 uniform int textureHeight;
 
@@ -13,23 +10,22 @@ layout(std430, binding = 2) buffer snowBuffer
     uint data[];
 };
 
-// new height
-out uint outTexture;
+out uint newHeight;
 
-vec2 texCoordToCoordinate(vec2 texCoord) {
+vec2 texCoordToIntCoordinate(vec2 texCoord) {
     return texCoord * textureWidth;
 }
 
-void main() {
-    float step = float(1)/textureWidth;
+int texCoordToSSBOIndex(vec2 texCoord) {
+    vec2 intCoordinate = texCoordToIntCoordinate(texCoord);
+    return int(intCoordinate.y) * textureWidth + int(intCoordinate.x);
+}
 
-    vec2 coordinate = texCoordToCoordinate(texCoordInFS);
-    int index = int(coordinate.y) * textureWidth + int(coordinate.x);
+void main() {
+    int index = texCoordToSSBOIndex(texCoordInFS);
 
     uint ssboValue = data[index];
     data[index] = 0;
 
-    // uint height = texture(texture1, texCoordInFS).r;
-
-    outTexture = ssboValue;
+    newHeight = ssboValue;
 }

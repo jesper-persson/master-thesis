@@ -127,9 +127,6 @@ void readBackAndAccumulatePixelValue(GLuint fboId, int textureSize, TextureForma
 			if (data[i] > 0 || data[i] < 0){
 				sample = data[i];
 			}
-			if (data[i] != 5000) {
-				// cout << data[i] << " not 5000" << endl;
-			}
 		}
 		cout << "Total reads: " << numReads << ", sum: " << setprecision(20) << fixed << sum << " sample: " << sample << endl;
 		free(data);
@@ -153,7 +150,6 @@ void readBackAndAccumulatePixelValue(GLuint fboId, int textureSize, TextureForma
 			sumC += data[i+2];
 		}
 		cout << "sumA " << fixed << sumA << ", sumB " << fixed << sumB << ", sumC " << fixed << sumC << endl;
-		// cout << "avg Total reads: " << numReads << ", sum: " << setprecision(20) << fixed << sum << " sample: " << sample << endl;
 		free(data);
 	}
 

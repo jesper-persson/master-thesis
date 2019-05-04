@@ -10,8 +10,7 @@ out vec3 fragPosWorldSpaceInTCS;
 out vec2 texCoordInTCS;
 out vec3 normalInTCS;
 
-void main()
-{
+void main() {
     fragPosWorldSpaceInTCS = (modelToWorld * vec4(position, 1.0)).xyz;
     texCoordInTCS = texCoord;
     normalInTCS = (modelToWorld * vec4(normal, 0.0)).xyz;

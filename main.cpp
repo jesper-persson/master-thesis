@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 30;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = false;
+const bool useSSBO = true;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.

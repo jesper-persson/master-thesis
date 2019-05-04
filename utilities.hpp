@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../glm/mat4x4.hpp"
+#include "glm/mat4x4.hpp"
 
 void calculateTangentsAndBiTangents(int numVertices, const float *vertexCoords, const float *textureCoords, float *tangents, float *bitangents) {
 	// Each iteration processes one triangle

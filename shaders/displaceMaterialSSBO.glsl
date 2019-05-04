@@ -8,7 +8,7 @@ uniform int textureHeight;
 
 uniform float compression;
 
-const bool useMultipleTargets = true;
+const bool useMultipleTargets = false;
 
 in vec2 texCoordInFS;
 

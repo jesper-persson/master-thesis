@@ -14,7 +14,6 @@ uniform mat4 projection;
 in vec2 texCoordInFS;
 in vec3 normalInFS;
 in vec3 fragPosWorldSpaceInFS;
-in vec3 fragPosViewSpaceInFS;
 in vec3 cameraPosWorldSpaceInFS;
 in mat3 TBNInFs;
 

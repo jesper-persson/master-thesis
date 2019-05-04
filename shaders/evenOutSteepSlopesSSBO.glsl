@@ -25,7 +25,7 @@ layout(std430, binding = 2) buffer snowBuffer
     uint data[];
 };
 
-vec2 texCoordToCoordinate(vec2 texCoord) {
+vec2 texCoordToIntCoordinate(vec2 texCoord) {
     return texCoord * textureWidth;
 }
 
@@ -45,9 +45,8 @@ float maxTexCoordY;
 
 bool withinBounds(int index) {
     vec2 newTexCoord = SSBOIndexToTexCoord(index);
-    return index >= 0 && index <= (textureWidth * textureWidth - 1)
-            && 
-            !(newTexCoord.x < minTexCoordX || newTexCoord.x >= maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y >= maxTexCoordY);
+    return index >= 0 && index <= (textureWidth * textureWidth - 1) && 
+           !(newTexCoord.x < minTexCoordX || newTexCoord.x >= maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y >= maxTexCoordY);
 }
 
 bool canReceiveSnow(float obsticleValue, uint height) {
@@ -58,10 +57,9 @@ bool canReceiveSnow(float obsticleValue, uint height) {
 const int numNeighbors = 8;
 
 void main() {
-    vec2 coordinate = texCoordToCoordinate(texCoordInFS);
+    vec2 coordinate = texCoordToIntCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
     uint ssboValue = data[index];
-
 
     minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
     maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
@@ -91,10 +89,7 @@ void main() {
     uint avgHeightDiff = 0;
     uint numNeighborsWithTooGreatSlope = 0;
     for (int i = 0; i < numNeighbors; i++) {
-        if (!withinBounds(indexMap[i])) {
-            continue;
-        }
-        if (!canReceiveSnow(obstacleValue[i], ssboValues[i])) {
+        if (!withinBounds(indexMap[i]) || !canReceiveSnow(obstacleValue[i], ssboValues[i])) {
             continue;
         }
         float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );
@@ -111,10 +106,7 @@ void main() {
 
         atomicAdd(data[index], -numNeighborsWithTooGreatSlope * numHeightToGivePerNeighbor);
         for (int i = 0; i < numNeighbors; i++) {
-            if (!withinBounds(indexMap[i])) {
-                continue;
-            }
-            if (!canReceiveSnow(obstacleValue[i], ssboValues[i])) {
+            if (!withinBounds(indexMap[i]) || !canReceiveSnow(obstacleValue[i], ssboValues[i])) {
                 continue;
             }
             float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );

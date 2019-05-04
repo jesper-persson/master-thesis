@@ -1,11 +1,5 @@
 #version 420
 
-/**
- * r: the amount of material this pixel should remove from its height,
- * g: how much material each "valid" neighbour should receive,
- * b: the current height,
- * a: obsticle value 
- */
 uniform usampler2D texture1;
 
 uniform int textureWidth;
@@ -20,13 +14,12 @@ uniform int activeHeight;
 uniform int activeCenterX;
 uniform int activeCenterY;
 
+uniform int heightColumnScale;
+uniform int frustumHeight;
+
 in vec2 texCoordInFS;
 
-/**
- * (r, g, b): height
- * a: obsticle
- */
-out uvec2 colorFS;
+out uvec2 result;
 
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
@@ -36,9 +29,6 @@ float slope(float h1, float h2) {
     float d = terrainSize / float(textureWidth);
     return atan(h2*1 - h1*1) / d;
 }
-
-uniform int heightColumnScale;
-uniform int frustumHeight;
 
 void main() {
     float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
@@ -50,7 +40,7 @@ void main() {
     uvec4 currentTex = texture(texture1, texCoordInFS);
     uint currentH = currentTex.b;
     uint toRemove = currentTex.r;
-    uint currentObsticleFragment = currentTex.a;
+    uint obsticleCurrent = currentTex.a;
 
     uint avgHeight = currentH - toRemove;
 
@@ -64,33 +54,18 @@ void main() {
     textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
     textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
 
-    bool canReceiveSnow = currentObsticleFragment - currentH > 1000 || currentObsticleFragment >(float(frustumHeight) - 0.1) * heightColumnScale;
+    bool canReceiveSnow = obsticleCurrent - currentH > 1000 || obsticleCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
 
     for (int i = 0; i < offsetSize; i++) {
-        vec2 newTexCoord = texCoordInFS + offsets[i] * step;
-        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
-            continue;
-        }
-        
+        vec2 newTexCoord = texCoordInFS + offsets[i] * step;        
         uvec4 neighbourTex = textureValues[i];
         uint h = neighbourTex.b;
         uint obsticleFragment = neighbourTex.a;
-
         bool canTransferSnow = obsticleFragment - h > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
 
-        // if (((neighbourTex.a - h) < 0.01 && neighbourTex.a <= 9.99 * heightColumnScale) || (currentTex.a  - currentH < 0.01 && currentTex.a <= 9.99 * heightColumnScale)) {
-        //     continue;
-        // }
-
-        // if (obsticleFragment - h <= 1) {
-        //     continue;
-        // }
-
-        if (!canTransferSnow) {
-            continue;
-        }
-
-        if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
+        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY
+            || !canTransferSnow
+            || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
             continue;
         }
 
@@ -101,6 +76,5 @@ void main() {
         }
     }
 
-    colorFS = uvec2(avgHeight, currentTex.a);
-    // colorFS = uvec4(avgHeight, avgHeight, numRec, avgHeight);
+    result = uvec2(avgHeight, currentTex.a);
 }

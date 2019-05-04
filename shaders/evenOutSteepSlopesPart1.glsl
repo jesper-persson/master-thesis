@@ -1,8 +1,6 @@
 #version 420
 
-
-uniform usampler2D texture1; // uint heihtmap
-
+uniform usampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight; // Not used, since we assume square texture
@@ -22,14 +20,7 @@ uniform int frustumHeight;
 
 in vec2 texCoordInFS;
 
-/**
- * r: the amount of material this pixel should remove from its height,
- * g: how much material each "valid" neighbour should receive,
- * b: the current height,
- * a: obsticle value 
- */
-out uvec4 colorFS;
-
+out uvec4 result;
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
 vec2 offsets[offsetSize] = {vec2(-1, 1), vec2(0, 1), vec2(1, 1), vec2(-1, 0), vec2(1, 0), vec2(-1, -1), vec2(0, -1), vec2(1, -1)};
@@ -49,7 +40,7 @@ void main() {
 
     uvec4 currentTex = texture(texture1, texCoordInFS);
     uint currentHeight = currentTex.r;
-    uint obsticleFragmentCurrent = currentTex.g ;
+    uint obsticleCurrent = currentTex.g;
 
     uint avgHeightDiff = 0;
     uint numWithTooHighSlope = 0;
@@ -64,34 +55,19 @@ void main() {
     textureValues[6] = textureOffset(texture1, texCoordInFS, ivec2(0, -1));
     textureValues[7] = textureOffset(texture1, texCoordInFS, ivec2(1, -1));
 
-
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
         uvec4 neighbourTex =  textureValues[i];
-        uint obsticleFragment = neighbourTex.g ;
+        uint obsticle = neighbourTex.g;
         uint h = neighbourTex.r;
 
-        bool canReceiveSnow = obsticleFragment - h > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
-        if (!canReceiveSnow) {
+        bool canReceiveSnow = obsticle - h > 1000 || obsticle > (float(frustumHeight) - 0.1) * heightColumnScale;
+        if (!canReceiveSnow
+            || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0
+            || newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
             continue;
         }
 
-        // if (obsticleFragment - h < 1 * heightColumnScale && obsticleFragment <= 9.99 * heightColumnScale ) {
-        //     continue;
-        // }
-
-        // if (obsticleFragment - h <= 1) {
-        //     continue;
-        // }
-
-        if (newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0) {
-            continue;
-        }
-        if (newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
-            continue;
-        }
-
-        // float s = slope(currentHeight / float(heightColumnScale), h / float(heightColumnScale));
         float s = slope(h / float(heightColumnScale), currentHeight / float(heightColumnScale));
 
         if (s > slopeThreshold) {
@@ -100,19 +76,18 @@ void main() {
         }
     }
 
+    bool canTransferSnow = obsticleCurrent - currentHeight > 1000 || obsticleCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
+    
     uint totalToRemove = 0;
     uint neighbourQuota = 0;
 
-    bool canTransferSnow = obsticleFragmentCurrent - currentHeight > 1000 || obsticleFragmentCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
-
-    if (numWithTooHighSlope > 0  && canTransferSnow) { // && (!(obsticleFragmentCurrent - currentHeight < 1 * heightColumnScale) || obsticleFragmentCurrent > 9.99 * heightColumnScale))  {
+    if (numWithTooHighSlope > 0  && canTransferSnow) {
         avgHeightDiff /= numWithTooHighSlope;
         avgHeightDiff = uint(avgHeightDiff * roughness);
 
         totalToRemove = avgHeightDiff - avgHeightDiff % numWithTooHighSlope;
-        neighbourQuota = avgHeightDiff / numWithTooHighSlope; // Take remainder and add to total to remove
+        neighbourQuota = avgHeightDiff / numWithTooHighSlope;
     }
 
-    colorFS = uvec4(totalToRemove, neighbourQuota, currentHeight, obsticleFragmentCurrent);
-    // colorFS = uvec4(totalToRemove, neighbourQuota, numWithTooHighSlope, obsticleFragmentCurrent);
+    result = uvec4(totalToRemove, neighbourQuota, currentHeight, obsticleCurrent);
 }

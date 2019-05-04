@@ -7,7 +7,7 @@
 #include "tinyobjloader.h"
 
 #include "texture.cpp"
-#include "render/utilities.hpp"
+#include "utilities.hpp"
 
 namespace BoxUtils {
     float boxSize = 0.5f;

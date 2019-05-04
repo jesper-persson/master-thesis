@@ -1,12 +1,6 @@
 #version 420
 
-/**
- * r: num neighbours with less contour value
- * g: -
- * b: contour value
- * a: penetration value
- */
-uniform isampler2D texture1; // Result from calc num rec
+uniform isampler2D texture1;
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -19,13 +13,7 @@ uniform int activeHeight;
 uniform int activeCenterX;
 uniform int activeCenterY;
 
-/**
- * r: new penetration depth [-1,0]
- * g: new penetration depth [-1,0]
- * b: contour value
- * a: num neighbours with less contour value
- */
-out ivec4 outNewDepth;
+out ivec4 result;
 
 const int offsetSize = 8;
 // vec2 offsets[offsetSize] = {vec2(0, 1), vec2(-1, 0), vec2(1, 0), vec2(0, -1)};
@@ -48,10 +36,8 @@ void main() {
     int totalReceived = 0;
     for (int i = 0; i < offsetSize; i++) {
         vec2 newCoord = texCoordInFS + offsets[i] * step * 1;
-        if (newCoord.x < 0 || newCoord.x > 1 || newCoord.y < 0 || newCoord.y > 1) {
-            continue;
-        }
-        if (newCoord.x < minTexCoordX || newCoord.x > maxTexCoordX || newCoord.y < minTexCoordY || newCoord.y > maxTexCoordY) {
+        if (newCoord.x < 0 || newCoord.x > 1 || newCoord.y < 0 || newCoord.y > 1
+            || newCoord.x < minTexCoordX || newCoord.x > maxTexCoordX || newCoord.y < minTexCoordY || newCoord.y > maxTexCoordY) {
             continue;
         }
 
@@ -65,40 +51,12 @@ void main() {
     }
     
     int newPenetration = 0;
-    
-    
-    // Giving
-        // newPenetration = totalReceived;
-        
-    // if (current.z == -3) { // Seed
-    //     newPenetration = penetration + totalReceived;
-    //     offset = newPenetration;
-    // } else if (current.z == -2) { // Obsticle
-    //     newPenetration = penetration;
-    //     offset = offset;
-    // } else {
-
-    //     newPenetration = penetration - totalReceived;
-    //     if (numReceiving > 0) {
-    //         newPenetration = newPenetration + abs(penetration) - abs(penetration) % numReceiving;
-    //     }
-
-    //     offset = offset + totalReceived;
-    //     if (numReceiving > 0) {
-    //         offset = offset - abs(penetration) + abs(penetration) % numReceiving;
-    //     }
-    // }
-
-    //outNewDepth = ivec4(newPenetration, offset, contour, numReceiving);
-
     if (current.z == -3) { // Seed
-        // newPenetration = penetration + totalReceived;
         offset = offset + totalReceived;
     } else if (current.z == -2) { // Obsticle
         newPenetration = penetration;
         offset = offset;
     } else {
-
         newPenetration = penetration + totalReceived;
         if (numReceiving > 0) {
             newPenetration = newPenetration - penetration + penetration % numReceiving;
@@ -110,5 +68,5 @@ void main() {
         }
     }
 
-    outNewDepth = ivec4(numReceiving, offset, contour, newPenetration);
+    result = ivec4(numReceiving, offset, contour, newPenetration);
 }

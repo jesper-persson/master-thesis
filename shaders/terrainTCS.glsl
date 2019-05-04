@@ -3,7 +3,6 @@
 layout (vertices = 3) out;
 
 uniform sampler2D heightmap;
-uniform sampler2D normalMapMacro;
 
 uniform mat4 worldToCamera;
 uniform mat4 projection;
@@ -45,8 +44,7 @@ float tessellationFromCameraDistance(vec3 p1, vec3 p2) {
     return clamp(tessellationFactor, minTessellation, maxTessellation);
 }
 
-void main()
-{
+void main() {
     texCoordInTES[gl_InvocationID] = texCoordInTCS[gl_InvocationID];
     normalInTES[gl_InvocationID] = normalInTCS[gl_InvocationID];
     fragPosWorldSpaceInTES[gl_InvocationID] = fragPosWorldSpaceInTCS[gl_InvocationID];
@@ -70,8 +68,8 @@ void main()
     gl_TessLevelOuter[2] = l1;
     gl_TessLevelInner[0] = i;
 
-    // gl_TessLevelOuter[0] = 14;
-    // gl_TessLevelOuter[1] = 14;
-    // gl_TessLevelOuter[2] = 14;
-    // gl_TessLevelInner[0] = 14;
+    // gl_TessLevelOuter[0] = 16;
+    // gl_TessLevelOuter[1] = 16;
+    // gl_TessLevelOuter[2] = 16;
+    // gl_TessLevelInner[0] = 16;
 }
