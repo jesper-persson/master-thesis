@@ -202,19 +202,11 @@ public:
     GLuint normalMap;
     bool useNormalMapping;
 
-    // SSAO
-    int numSamples;
-    glm::vec3 *samples;
-    GLuint ssaoMap;
-    GLuint randomTexture;
-    GLuint occlusionMap;
-
     Box() {
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
         rotation = glm::mat4(1.0f);
         useNormalMapping = false;
-        numSamples = 0;
         forward = glm::vec3(0, 0, 1);
         up = glm::vec3(0, 1, 0);
     }
@@ -255,27 +247,6 @@ public:
         } else {
             glUniform1i(glGetUniformLocation(shaderProgram, "useNormalMapping"), 0);
         }
-
-        // SSAO
-        glActiveTexture(GL_TEXTURE4);
-	    glBindTexture(GL_TEXTURE_2D, ssaoMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "ssaoMap"), 4);
-
-        glActiveTexture(GL_TEXTURE5);
-	    glBindTexture(GL_TEXTURE_2D, randomTexture);
-        glUniform1i(glGetUniformLocation(shaderProgram, "noiseSSAO"), 5);
-
-        // Push kernel
-        for (int i = 0; i < numSamples; i++) {
-            std::string uniform = "kernel[";
-            uniform.append(std::to_string(i));
-            uniform.append("]");
-            glUniform3f(glGetUniformLocation(shaderProgram, uniform.c_str()), samples[i].x, samples[i].y, samples[i].z);
-        }
-
-        glActiveTexture(GL_TEXTURE6);
-	    glBindTexture(GL_TEXTURE_2D, occlusionMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "occlusionMap"), 6);
         
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

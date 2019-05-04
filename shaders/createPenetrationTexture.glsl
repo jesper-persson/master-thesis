@@ -37,7 +37,7 @@ void main() {
         result = ivec4(0, 0, -1, 0);
     }
     else if (!isPenetrating && wasPenetrating) {
-        result = ivec4(0, 0, -2, 0); // the -2 indicates obsticle
+        result = ivec4(0, 0, -2, 0); // the -2 indicates obstacle
     }
     else if (!isPenetrating && !wasPenetrating) {
         result = ivec4(texCoordToIntCoordinate(texCoordInFS).rg, -3, 0); // -3 indicates seed

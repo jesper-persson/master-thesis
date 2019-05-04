@@ -12,7 +12,7 @@ const bool useMultipleTargets = false;
 
 in vec2 texCoordInFS;
 
-layout(std430, binding = 2) buffer snowBuffer
+layout(std430, binding = 2) buffer materialBuffer
 {
     uint data[];
 };

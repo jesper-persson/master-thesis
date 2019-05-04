@@ -40,7 +40,7 @@ void main() {
 
     uvec4 currentTex = texture(texture1, texCoordInFS);
     uint currentHeight = currentTex.r;
-    uint obsticleCurrent = currentTex.g;
+    uint obstacleCurrent = currentTex.g;
 
     uint avgHeightDiff = 0;
     uint numWithTooHighSlope = 0;
@@ -58,11 +58,11 @@ void main() {
     for (int i = 0; i < offsetSize; i++) {
         vec2 newTexCoord = texCoordInFS + offsets[i] * step;
         uvec4 neighbourTex =  textureValues[i];
-        uint obsticle = neighbourTex.g;
+        uint obstacle = neighbourTex.g;
         uint h = neighbourTex.r;
 
-        bool canReceiveSnow = obsticle - h > 1000 || obsticle > (float(frustumHeight) - 0.1) * heightColumnScale;
-        if (!canReceiveSnow
+        bool canReceiveMaterial = obstacle - h > 1000 || obstacle > (float(frustumHeight) - 0.1) * heightColumnScale;
+        if (!canReceiveMaterial
             || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y > 1 || newTexCoord.y < 0
             || newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY) {
             continue;
@@ -76,12 +76,12 @@ void main() {
         }
     }
 
-    bool canTransferSnow = obsticleCurrent - currentHeight > 1000 || obsticleCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
+    bool canTransferMaterial = obstacleCurrent - currentHeight > 1000 || obstacleCurrent > (float(frustumHeight) - 0.1) * heightColumnScale;
     
     uint totalToRemove = 0;
     uint neighbourQuota = 0;
 
-    if (numWithTooHighSlope > 0  && canTransferSnow) {
+    if (numWithTooHighSlope > 0  && canTransferMaterial) {
         avgHeightDiff /= numWithTooHighSlope;
         avgHeightDiff = uint(avgHeightDiff * roughness);
 
@@ -89,5 +89,5 @@ void main() {
         neighbourQuota = avgHeightDiff / numWithTooHighSlope;
     }
 
-    result = uvec4(totalToRemove, neighbourQuota, currentHeight, obsticleCurrent);
+    result = uvec4(totalToRemove, neighbourQuota, currentHeight, obstacleCurrent);
 }

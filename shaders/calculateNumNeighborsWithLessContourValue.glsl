@@ -46,7 +46,7 @@ void main() {
             continue;
         }
         vec4 currentInner = texture(texture1, newTexCoord);
-        if (currentInner.z < current.z && currentInner.z != -2) { // -2 checks for obsticle
+        if (currentInner.z < current.z && currentInner.z != -2) { // -2 checks for obstacle
             numNeighboursWithLessDistance++;
         }
     }

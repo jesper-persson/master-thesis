@@ -1,6 +1,6 @@
 #version 430
 
-uniform sampler2D texture1; // Obsticle map
+uniform sampler2D texture1; // obstacle map
 
 uniform int textureWidth;
 uniform int textureHeight;
@@ -20,7 +20,7 @@ uniform int activeCenterY;
 uniform int heightColumnScale;
 uniform int frustumHeight;
 
-layout(std430, binding = 2) buffer snowBuffer
+layout(std430, binding = 2) buffer materialBuffer
 {
     uint data[];
 };
@@ -49,9 +49,9 @@ bool withinBounds(int index) {
            !(newTexCoord.x < minTexCoordX || newTexCoord.x >= maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y >= maxTexCoordY);
 }
 
-bool canReceiveSnow(float obsticleValue, uint height) {
-    float obsticleFragment = obsticleValue * frustumHeight * heightColumnScale;
-    return obsticleFragment - height > 1000 || obsticleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
+bool canReceiveMaterial(float obstacleValue, uint height) {
+    float obstacleFragment = obstacleValue * frustumHeight * heightColumnScale;
+    return obstacleFragment - height > 1000 || obstacleFragment > (float(frustumHeight) - 0.1) * heightColumnScale;
 }
 
 const int numNeighbors = 8;
@@ -89,7 +89,7 @@ void main() {
     uint avgHeightDiff = 0;
     uint numNeighborsWithTooGreatSlope = 0;
     for (int i = 0; i < numNeighbors; i++) {
-        if (!withinBounds(indexMap[i]) || !canReceiveSnow(obstacleValue[i], ssboValues[i])) {
+        if (!withinBounds(indexMap[i]) || !canReceiveMaterial(obstacleValue[i], ssboValues[i])) {
             continue;
         }
         float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );
@@ -106,7 +106,7 @@ void main() {
 
         atomicAdd(data[index], -numNeighborsWithTooGreatSlope * numHeightToGivePerNeighbor);
         for (int i = 0; i < numNeighbors; i++) {
-            if (!withinBounds(indexMap[i]) || !canReceiveSnow(obstacleValue[i], ssboValues[i])) {
+            if (!withinBounds(indexMap[i]) || !canReceiveMaterial(obstacleValue[i], ssboValues[i])) {
                 continue;
             }
             float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );

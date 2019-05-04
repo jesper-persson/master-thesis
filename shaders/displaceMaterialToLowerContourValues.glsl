@@ -53,7 +53,7 @@ void main() {
     int newPenetration = 0;
     if (current.z == -3) { // Seed
         offset = offset + totalReceived;
-    } else if (current.z == -2) { // Obsticle
+    } else if (current.z == -2) { // obstacle
         newPenetration = penetration;
         offset = offset;
     } else {

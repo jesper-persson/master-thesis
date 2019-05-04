@@ -19,8 +19,6 @@ out mat3 TBNInFs;
 
 uniform int heightColumnScale;
 
-out vec3 shadowCoordInFS;
-
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2) {
    	return vec2(gl_TessCoord.x) * v0 + vec2(gl_TessCoord.y) * v1 + vec2(gl_TessCoord.z) * v2;
 }

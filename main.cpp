@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 30;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = true;
+const bool useSSBO = false;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
     GLuint shaderProgramQuad = createShaderProgram("shaders/basicVS.glsl", "shaders/quad.glsl");
 
 
-    FBOWrapper fboSnowCoverDepth = createFBOForDepthTexture(heightmapSize, heightmapSize);
+    FBOWrapper FBODepthTexture = createFBOForDepthTexture(heightmapSize, heightmapSize);
     glm::mat4 worldToCameraDepth = glm::lookAt(terrainOrigin, terrainOrigin + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
 
     float heightScale = heightmapSize / terrainSize;
@@ -289,7 +289,7 @@ int main(int argc, char* argv[])
     blur.execute(calculateNormals.getTextureResult(), 0);
     ground.normalmapMacro = blur.getTextureResult();
 
-    // SSBO for snow distribution
+    // SSBO for material displacement
     GLuint ssbo;
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -392,10 +392,10 @@ int main(int argc, char* argv[])
         // setActiveAreaForObject(terrainOrigin, terrainSize, tire.position, sizeTires, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
-        // Render snow cover depth map
-        timing.begin("RENDER_SNOW_DEPTH");
+        // Render depth texture
+        timing.begin("RENDER_DEPTH_TEXTURE");
         glViewport(0, 0, heightmapSize, heightmapSize);
-        glBindFramebuffer(GL_FRAMEBUFFER, fboSnowCoverDepth.fboId);
+        glBindFramebuffer(GL_FRAMEBUFFER, FBODepthTexture.fboId);
         glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
@@ -404,15 +404,14 @@ int main(int argc, char* argv[])
         footstep.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        timing.end("RENDER_SNOW_DEPTH");
+        timing.end("RENDER_DEPTH_TEXTURE");
 
-        GLuint obsticleMap = fboSnowCoverDepth.textureId;
+        GLuint obstacleMap = FBODepthTexture.textureId;
 
-        // Distance transform and distribute snow to boundaries
         timing.begin("PENETRATION_TEXTURE_CALC");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             createPenetartionTextureOperation.activeArea = activeAreas[i];
-            createPenetartionTextureOperation.execute(fboSnowCoverDepth.textureId, ground.heightmap);
+            createPenetartionTextureOperation.execute(FBODepthTexture.textureId, ground.heightmap);
         }
         timing.end("PENETRATION_TEXTURE_CALC");
 
@@ -439,7 +438,7 @@ int main(int argc, char* argv[])
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 for (int j = 0; j < numIterationsEvenOutSlopes; j++) {
                     evenOutSteepSlopesSSBO.activeArea = activeAreas[i];
-                    evenOutSteepSlopesSSBO.execute(obsticleMap, 0);
+                    evenOutSteepSlopesSSBO.execute(obstacleMap, 0);
                 }
             }
 
@@ -464,7 +463,7 @@ int main(int argc, char* argv[])
             }
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 combineDisplacedMaterialWithHeightmap.activeArea = activeAreas[i];
-                combineDisplacedMaterialWithHeightmap.obstacleMap = obsticleMap;
+                combineDisplacedMaterialWithHeightmap.obstacleMap = obstacleMap;
                 combineDisplacedMaterialWithHeightmap.execute(displaceMaterialToLowerContourValues.getTextureResult(), ground.heightmap);
             }
             timing.end("ITERATIVE_MOVE_TO_CONTOUR");
