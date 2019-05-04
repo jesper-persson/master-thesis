@@ -52,5 +52,4 @@ void main() {
         int targetSSBOIndex = intCoordinateToSSBOIndex(cloestSeedIntCoordinate);
         atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
     }
-
 }

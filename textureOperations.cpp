@@ -131,7 +131,7 @@ public:
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);   
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glViewport(0, 0, windowWidth, windowHeight);
         glEnable(GL_DEPTH_TEST);
     }
 
@@ -211,11 +211,13 @@ public:
 
     }
 
-    EvenOutSteepSlopes(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale)
+    EvenOutSteepSlopes(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int frustumHeight, int heightColumnScale, float terrainSize, float slopeThreshold, float roughness)
     : TextureOperation(textureWidth, textureHeight, program, texFormat) {
-        terrainSize = 1;
         this->frustumHeight = frustumHeight;
         this->heightColumnScale = heightColumnScale;
+        this->terrainSize = terrainSize;
+        this->slopeThreshold = slopeThreshold;
+        this->roughness = roughness;
     }
 
     void bindUniforms() override {
@@ -247,8 +249,6 @@ public:
         passIndex += 1;
     }
 };
-
-
 
 class CombineDisplacedMaterialWithHeightmap : public TextureOperation {
 public:

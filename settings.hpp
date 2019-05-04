@@ -6,9 +6,13 @@
 
 using namespace std;
 
+extern float activeAreaMargin;
+extern int windowHeight;
+extern int windowWidth;
+extern int frustumHeight;
+extern bool useSSBO;
 extern float terrainSize;
 extern int numVerticesPerRow;
-extern bool evenOutSteepSlopes;
 extern float compression;
 extern float roughness;
 extern float slopeThreshold;
@@ -27,9 +31,7 @@ bool parseBoolean(string value) {
 }
 
 void applySetting(string setting, string stringValue) {
-    if (setting == "evenOutSteepSlopes") {
-        evenOutSteepSlopes = parseBoolean(stringValue);
-    } else if (setting == "numIterationsEvenOutSlopes") {
+    if (setting == "numIterationsEvenOutSlopes") {
         numIterationsEvenOutSlopes = stoi(stringValue);
     } else if (setting == "slopeThreshold") {
         slopeThreshold = stof(stringValue);
@@ -40,13 +42,23 @@ void applySetting(string setting, string stringValue) {
     } else if (setting == "heightmapSize") {
         heightmapSize = stof(stringValue);
     } else if (setting == "terrainSize") {
-        terrainSize = stoi(stringValue);
+        terrainSize = stof(stringValue);
     } else if (setting == "numIterationsBlurNormals") {
         numIterationsBlurNormals = stof(stringValue);
     } else if (setting == "numVerticesPerRow") {
         numVerticesPerRow = stof(stringValue);
     } else if (setting == "numIterationsDisplaceMaterialToContour") {
         numIterationsDisplaceMaterialToContour = stof(stringValue);
+    } else if (setting == "activeAreaMargin") {
+        activeAreaMargin = stof(stringValue);
+    } else if (setting == "windowWidth") {
+        windowWidth = stoi(stringValue);
+    } else if (setting == "windowHeight") {
+        windowHeight = stoi(stringValue);
+    } else if (setting == "frustumHeight") {
+        frustumHeight = stoi(stringValue);
+    } else if (setting == "useSSBO") {
+        useSSBO = parseBoolean(stringValue);
     } else {
         throw invalid_argument("No setting exists for " + setting);
     }
