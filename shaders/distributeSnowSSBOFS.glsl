@@ -1,13 +1,14 @@
 #version 430
 
 uniform isampler2D texture1; // Distance texture
-
 uniform usampler2D texture2; // Heightmap texture
 
 uniform int textureWidth;
 uniform int textureHeight;
 
 uniform float compression;
+
+const bool useMultipleTargets = true;
 
 in vec2 texCoordInFS;
 
@@ -16,15 +17,7 @@ layout(std430, binding = 2) buffer snowBuffer
     uint data[];
 };
 
-/**
- * r: ?
- * g: ?
- * b: ?
- * a: ?
- */
-out vec4 outNewDepth;
-
-vec2 texCoordToCoordinate(vec2 texCoord) {
+vec2 texCoordToIntCoordinate(vec2 texCoord) {
     return texCoord * textureWidth;
 }
 
@@ -33,30 +26,31 @@ int intCoordinateToSSBOIndex(vec2 intCoordinate) {
 } 
 
 void main() {
-    // Read how much snow this pixel should move
-
-    // vec4 tex1Value = texture(texture1, texCoordInFS);
-
-    // Move to SSBO location (given by my coordinates to closest )
-    ivec4 cloestSeedI = texture(texture1, texCoordInFS).rgba;
-    uint penetration = uint(cloestSeedI.w); //texture(texture2, texCoordInFS).r;
-    vec2 cloestSeed = vec2(float(cloestSeedI.x), float(cloestSeedI.y));
-    vec2 myCoord = texCoordToCoordinate(texCoordInFS);
-    vec2 dirClosest = cloestSeed - myCoord;
-    float lengthToCloest = length(dirClosest);// * length(dirClosest);
-    // cloestSeed = cloestSeed + normalize(dirClosest) * lengthToCloest;
-
-    int indexCloest = int(cloestSeed.y) * textureWidth + int(cloestSeed.x);
-    int indexMe = int(myCoord.y) * textureWidth + int(myCoord.x);
-
+    vec2 currentIntCoordinate = texCoordToIntCoordinate(texCoordInFS);
+    int currentSSBOIndex = intCoordinateToSSBOIndex(currentIntCoordinate);
+    
     uint heightmapValue = texture(texture2, texCoordInFS).r;
+    
+    ivec4 distanceTextureValue = texture(texture1, texCoordInFS).rgba;
+    uint penetration = uint(distanceTextureValue.w);
+    vec2 cloestSeedIntCoordinate = vec2(float(distanceTextureValue.x), float(distanceTextureValue.y));
+    vec2 delta = cloestSeedIntCoordinate - currentIntCoordinate;
+    vec2 dirToClosestSeed = normalize(delta);
+    float lengthToClosestSeed = length(delta);
 
-    int numDivisions = int(penetration) / 5000;
-    penetration = penetration / numDivisions;
-    atomicAdd(data[indexMe], heightmapValue - penetration * numDivisions );
-    for (int i = 0; i < numDivisions; i++) {
-        vec2 target = cloestSeed + normalize(dirClosest) * (length(dirClosest) + i);
-        int targetIndex = intCoordinateToSSBOIndex(target);
-        atomicAdd(data[targetIndex], uint(penetration * (1 - compression)));
+    if (useMultipleTargets) {
+        int numDivisions = int(ceil(int(penetration) / 5000.0));
+        penetration = penetration / numDivisions;
+        atomicAdd(data[currentSSBOIndex], heightmapValue - penetration * numDivisions);
+        for (int i = 0; i < numDivisions; i++) {
+            vec2 target = cloestSeedIntCoordinate + dirToClosestSeed * (lengthToClosestSeed + i);
+            int targetSSBOIndex = intCoordinateToSSBOIndex(target);
+            atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
+        }
+    } else {
+        atomicAdd(data[currentSSBOIndex], heightmapValue - penetration);
+        int targetSSBOIndex = intCoordinateToSSBOIndex(cloestSeedIntCoordinate);
+        atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
     }
+
 }
