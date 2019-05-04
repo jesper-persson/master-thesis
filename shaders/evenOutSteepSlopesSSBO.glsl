@@ -11,6 +11,12 @@ uniform float slopeThreshold;
 
 in vec2 texCoordInFS;
 
+// Allows to simulate part of texture
+uniform int activeWidth;
+uniform int activeHeight;
+uniform int activeCenterX;
+uniform int activeCenterY;
+
 uniform int heightColumnScale;
 uniform int frustumHeight;
 
@@ -32,8 +38,16 @@ float slope(float h1, float h2) {
     return atan(h2 - h1) / d;
 }
 
+float minTexCoordX;
+float maxTexCoordX;
+float minTexCoordY;
+float maxTexCoordY;
+
 bool withinBounds(int index) {
-    return index >= 0 && index <= (textureWidth * textureWidth - 1);
+    vec2 newTexCoord = SSBOIndexToTexCoord(index);
+    return index >= 0 && index <= (textureWidth * textureWidth - 1)
+            && 
+            !(newTexCoord.x < minTexCoordX || newTexCoord.x >= maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y >= maxTexCoordY);
 }
 
 bool canReceiveSnow(float obsticleValue, uint height) {
@@ -47,6 +61,12 @@ void main() {
     vec2 coordinate = texCoordToCoordinate(texCoordInFS);
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
     uint ssboValue = data[index];
+
+
+    minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
+    minTexCoordY = (activeCenterY - activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
+    maxTexCoordY = (activeCenterY + activeHeight/float(2) + textureHeight/float(2))/float(textureHeight); 
 
     int indexMap[numNeighbors] = {
         index - textureWidth - 1,
@@ -97,8 +117,8 @@ void main() {
             if (!canReceiveSnow(obstacleValue[i], ssboValues[i])) {
                 continue;
             }
-        float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );
-        if (slopeValue > slopeThreshold) {
+            float slopeValue = slope(ssboValues[i]/float(heightColumnScale), ssboValue/float(heightColumnScale) );
+            if (slopeValue > slopeThreshold) {
                 atomicAdd(data[indexMap[i]], numHeightToGivePerNeighbor);
             }
         }

@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 10;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = false;
+const bool useSSBO = true;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
 
     // Active areas
     vector<ActiveArea> activeAreas;
-    activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
+    activeAreas.push_back(ActiveArea(0, 0, heightmapSize / 2, heightmapSize / 2));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
@@ -443,6 +443,7 @@ int main(int argc, char* argv[])
             timing.begin("SSBO_EVEN_OUT");
             for (unsigned i = 0; i < activeAreas.size(); i++) {
                 for (int j = 0; j < numIterationsEvenOutSlopes; j++) {
+                    ssboEvenOutSlopes.activeArea = activeAreas[i];
                     ssboEvenOutSlopes.execute(obsticleMap, 0);
                 }
             }
