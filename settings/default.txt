@@ -1,10 +1,10 @@
 terrainSize=80.0f
-numVerticesPerRow=256
+numVerticesPerRow=64
 evenOutSteepSlopes=true
 compression=0f;
-roughness=0.5f
-slopeThreshold=1.5f
+roughness=0.3f
+slopeThreshold=0.9f
 numIterationsBlurNormals=1
-numIterationsEvenOutSlopes=1
+numIterationsEvenOutSlopes=10
 numIterationsDisplaceMaterialToContour=13
-heightmapSize=512.0f
+heightmapSize=1024.0f

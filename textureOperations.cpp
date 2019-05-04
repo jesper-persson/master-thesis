@@ -364,3 +364,22 @@ public:
         TextureOperation::bindUniforms();
     }
 };
+
+class IntHeightmapToFloat : public TextureOperation {
+public:
+    int heightColumnScale;
+
+    IntHeightmapToFloat() {
+
+    }
+
+    IntHeightmapToFloat(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, int heightColumnScale)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->heightColumnScale = heightColumnScale;
+    }
+
+    void bindUniforms() override {
+        glUniform1i(glGetUniformLocation(shaderProgram, "heightColumnScale"), heightColumnScale);
+        TextureOperation::bindUniforms();
+    }
+};

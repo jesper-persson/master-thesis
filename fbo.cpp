@@ -7,7 +7,7 @@
 using namespace std;
 
 enum class TextureFormat {
-    RGBA16F, R32UI, R32I, RGBA32UI, RGBA32I, RG32UI
+    RGBA16F, R32UI, R32I, RGBA32UI, RGBA32I, RG32UI, R32F
 };
 
 class FBOWrapper
@@ -70,8 +70,12 @@ FBOWrapper createFrameBufferSingleTexture(int textureWidth, int textureHeight, T
 
         if (textureFormat == TextureFormat::RGBA16F) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        } else if (textureFormat == TextureFormat::R32F) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         } else if (textureFormat == TextureFormat::R32UI) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

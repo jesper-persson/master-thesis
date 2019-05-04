@@ -1,7 +1,5 @@
 #version 400
 
-uniform usampler2D heightmap;
-
 uniform sampler2D texture1;
 uniform sampler2D shadowMap;
 vec3 lightPosition = vec3(20, 20, 20);
@@ -58,9 +56,9 @@ void main() {
     vec3 directionToLight = -1*lightDir;
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
-    float ambient = 0.18;
-    float diffuseAmount = 0.25;
-    float specularAmount = 0.01;
+    float ambient = 0.58;
+    float diffuseAmount = 0.45;
+    float specularAmount = 0.001;
     vec4 color = vec4(0.98, 0.98, 1, 1);
 
     // If sand

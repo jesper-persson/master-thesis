@@ -146,7 +146,7 @@ public:
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
     }
-    void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
+    void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection, bool useFloatTexture, GLuint floatHeightmap) {
         glUseProgram(shaderProgram);
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), this->scale);
         glm::mat4 translate = glm::translate(glm::mat4(1.0f), position);
@@ -162,9 +162,15 @@ public:
         glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
 
         glActiveTexture(GL_TEXTURE1);
-	    glBindTexture(GL_TEXTURE_2D, heightmap);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // linear not supported on uint textures
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // linear not supported on uint textures
+        if (useFloatTexture) {
+	        glBindTexture(GL_TEXTURE_2D, floatHeightmap);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        } else {
+	        glBindTexture(GL_TEXTURE_2D, heightmap);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
         glUniform1i(glGetUniformLocation(shaderProgram, "heightmap"), 1);
 
         glActiveTexture(GL_TEXTURE2);

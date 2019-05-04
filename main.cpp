@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 10;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = true;
+const bool useSSBO = false;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -235,12 +235,12 @@ int main(int argc, char* argv[])
 
     float heightScale = heightmapSize / terrainSize;
     CalculateNormalsOperation calculateNormalsOperation = CalculateNormalsOperation(heightmapSize, heightmapSize, shaderProgramCalculateNormals, heightScale, heightColumnScale);
+    
     CreateInitialHeightmapTexture createInitialHeightmapTexture = CreateInitialHeightmapTexture(heightmapSize, heightmapSize, shaderProgramCopyTexture, TextureFormat::R32UI, frustumHeight, heightColumnScale);
     // When updating the scene, only a subpart of the heightmap is updates. So we must
     // begin by storing the entire heightmap in this framebuffer
     createInitialHeightmapTexture.execute(ground.heightmap, 0);
     ground.heightmap = createInitialHeightmapTexture.getTextureResult();
-
 
     DistributeSnowSSBO buildDeltaSnowSSBOBufferOperation = DistributeSnowSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeSnowSSBOFS.glsl"), TextureFormat::RGBA16F, compression);
 
@@ -250,8 +250,6 @@ int main(int argc, char* argv[])
     if (useSSBO) {
         ground.heightmap = combineSSBOWithHeightmap.getTextureResult();
     }
-
-    
 
 
     ErosionOperation calcAvgHeight = ErosionOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/erosionCalcAvgHeightFS.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale);
@@ -278,6 +276,9 @@ int main(int argc, char* argv[])
     PingPongTextureOperation distributeToLowerContourValues = PingPongTextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/distributeToLowerContourValues.glsl"), numIterationsDisplaceMaterialToContour, TextureFormat::RGBA32I);
     PrepareTextureForCalcAvg combineDistributedTerrainWithHeightmap = PrepareTextureForCalcAvg(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/combineDistributedTerrainWithHeightmap.glsl"), TextureFormat::RG32UI, frustumHeight, heightColumnScale);
 
+    // Turn int heightmap into float
+    IntHeightmapToFloat intHeightmapToFloat = IntHeightmapToFloat(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/intHeightmapToFloat.glsl"), TextureFormat::R32F, heightColumnScale);
+    intHeightmapToFloat.execute(ground.heightmap, 0);
 
 
     int jumpFloodIterations = log2(heightmapSize);
@@ -508,14 +509,21 @@ int main(int argc, char* argv[])
             blurSnowHeightmap.activeArea = activeAreas[i];
             blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
         }
-        timing.end("NORMAL_MACRO_BLUR");
         ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
+        timing.end("NORMAL_MACRO_BLUR");
+
+        timing.begin("INT_HEIGHTMAP_TO_FLOAT");
+        for (unsigned i = 0; i < activeAreas.size(); i++) {
+            intHeightmapToFloat.activeArea = activeAreas[i];
+            intHeightmapToFloat.execute(ground.heightmap, 0);
+        }
+        timing.end("INT_HEIGHTMAP_TO_FLOAT");
 
         // Render to screen
         timing.begin("RENDER_TO_SCREEN");
         // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
+        ground.render(shaderProgramTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
         // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
-        ground.render(shaderProgramTerrain, worldToCamera, perspective);
         box.render(shaderProgramDefault, worldToCamera, perspective);
         box2.render(shaderProgramDefault, worldToCamera, perspective);
         tire.render(shaderProgramDefault, worldToCamera, perspective);
@@ -539,8 +547,8 @@ int main(int argc, char* argv[])
             // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 
-        if (frameCounterGlobal % 100 == 0) {
-            // timing.print();
+        if (frameCounterGlobal % 1000 == 0) {
+            timing.print();
             readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 

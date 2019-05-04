@@ -2,7 +2,7 @@
 
 layout(triangles, fractional_odd_spacing, ccw) in;
 
-uniform usampler2D heightmap;
+uniform sampler2D heightmap;
 uniform sampler2D normalMapMacro;
 
 uniform mat4 worldToCamera;
@@ -45,8 +45,10 @@ void main()
    	normalInFS = interpolate3D(normalInTES[0], normalInTES[1], normalInTES[2]);
 
    	fragPosWorldSpaceInFS = interpolate3D(fragPosWorldSpaceInTES[0], fragPosWorldSpaceInTES[1], fragPosWorldSpaceInTES[2]);
-	uint sampledHeight = texture(heightmap, texCoordFlippedY).r;
-	fragPosWorldSpaceInFS.y = float(sampledHeight)/heightColumnScale;
+	// uint sampledHeight = texture(heightmap, texCoordFlippedY).r;
+	// fragPosWorldSpaceInFS.y = sampledHeight/float(heightColumnScale);
+	float sampledHeight = texture(heightmap, texCoordFlippedY).r;
+	fragPosWorldSpaceInFS.y = sampledHeight;
 
 	fragPosViewSpaceInFS = vec3(worldToCamera * vec4(fragPosWorldSpaceInFS, 1.0));
    	gl_Position = projection * worldToCamera * vec4(fragPosWorldSpaceInFS, 1.0);
