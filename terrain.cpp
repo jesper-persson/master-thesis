@@ -128,10 +128,11 @@ public:
         vao = tr.vao;
         indexBuffer = tr.indexBuffer;
         numIndices = tr.numIndices;
-        textureId = loadPNGTexture("images/sample.png");
+        textureId = loadPNGTexture("resources/sample.png");
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
     }
+
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection, bool useFloatTexture, GLuint floatHeightmap) {
         glUseProgram(shaderProgram);
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), this->scale);

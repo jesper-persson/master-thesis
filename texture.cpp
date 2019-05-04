@@ -110,9 +110,7 @@ void readBackAndAccumulatePixelValue(GLuint fboId, int textureSize, TextureForma
 		}
 		cout << "Total reads: " << numReads << ", sum: " << setprecision(20) << fixed << sum << " sample: " << sample << endl;
 		free(data);
-
 	} else if (textureFormat == TextureFormat::R32UI) {
-
 		int pixelSize = 4 * 1; // 4 bytes and 4 channels
 		GLuint *data = (GLuint*) malloc(pixelSize * width * height);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -131,7 +129,6 @@ void readBackAndAccumulatePixelValue(GLuint fboId, int textureSize, TextureForma
 		cout << "Total reads: " << numReads << ", sum: " << setprecision(20) << fixed << sum << " sample: " << sample << endl;
 		free(data);
 	} else if (textureFormat == TextureFormat::RGBA32UI) {
-
 		int pixelSize = 4 * 4; // 4 bytes and 4 channels
 		GLuint *data = (GLuint*) malloc(pixelSize * width * height);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -151,6 +148,8 @@ void readBackAndAccumulatePixelValue(GLuint fboId, int textureSize, TextureForma
 		}
 		cout << "sumA " << fixed << sumA << ", sumB " << fixed << sumB << ", sumC " << fixed << sumC << endl;
 		free(data);
+	} else {
+		cout << "No support for that texture format yet." << endl;
 	}
 
 }

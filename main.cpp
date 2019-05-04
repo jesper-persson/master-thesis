@@ -21,7 +21,7 @@ const int WINDOW_WIDTH = 1800;
 const int frustumHeight = 30;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
-const bool useSSBO = false;
+const bool useSSBO = true;
 
 // Settings parameters
 float terrainSize = 80.0f; // World space size of terrain mesh.
@@ -37,7 +37,7 @@ int numIterationsDisplaceMaterialToContour = 5;
 
 #include "texture.cpp"
 #include "shader.cpp"
-#include "box.cpp"
+#include "model.cpp"
 #include "quad.cpp"
 #include "terrain.cpp"
 #include "fbo.cpp"
@@ -171,20 +171,20 @@ int main(int argc, char* argv[])
     glm::vec3 terrainOrigin = glm::vec3(0, 0, 0);
 
     // Create objects in the scene
-    Box box = Box::createBox();
+    Model box = Box::createBox();
     box.scale = glm::vec3(2, 4, 2);
     box.position = glm::vec3(5, 8.001f, 0);
-    box.textureId = loadPNGTexture("images/gray.png");
+    box.textureId = loadPNGTexture("resources/gray.png");
     box.useNormalMapping = false;
 
-    Box box2 = Box::createBox();
+    Model box2 = Box::createBox();
     box2.scale = glm::vec3(26, 4, 5.0f);
     box2.position = glm::vec3(-10.5f, 6.0f, 4.0f);
-    box2.textureId = loadPNGTexture("images/red.png");
+    box2.textureId = loadPNGTexture("resources/red.png");
     box2.useNormalMapping = false;
 
-    Box tire = loadUsingTinyObjLoader("tire.obj");
-    tire.textureId = loadPNGTexture("images/gray.png");
+    Model tire = loadUsingTinyObjLoader("resources/tire.obj");
+    tire.textureId = loadPNGTexture("resources/gray.png");
     tire.position = glm::vec3(-15.0f, 5.5f, 0);
     tire.scale = glm::vec3(0.1f, 0.1f, 0.1f);
 
@@ -193,11 +193,11 @@ int main(int argc, char* argv[])
     Terrain ground(numVerticesPerRow);
     ground.scale = glm::vec3(terrainSize, 1, terrainSize);
     ground.position = terrainOrigin;
-    ground.textureId = loadPNGTexture("images/white.png");
-    ground.normalmap = loadPNGTexture("images/normalmap2.png");
+    ground.textureId = loadPNGTexture("resources/white.png");
+    ground.normalmap = loadPNGTexture("resources/normalmap2.png");
     ground.heightColumnScale = heightColumnScale;
     ground.heightmap = createTextureForHeightmap(heightmapSize);
-    // ground.heightmap = loadPNGTextureForHeightmap("images/heightmap2.png");
+    // ground.heightmap = loadPNGTextureForHeightmap("resources/heightmap2.png");
 
     Camera camera;
 
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     createInitialHeightmapTexture.execute(ground.heightmap, 0);
     ground.heightmap = createInitialHeightmapTexture.getTextureResult();
 
-    DisplaceMaterialSSBO displaceMaterialSSBO = DisplaceMaterialSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/displaceMaterialSSBO.glsl"), TextureFormat::RGBA16F, compression);
+    DisplaceMaterialSSBO displaceMaterialSSBO = DisplaceMaterialSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/displaceMaterialSSBO.glsl"), TextureFormat::R32I, compression);
 
     // Tell it not to create a texture tho
     TextureOperation moveSBBOValuesToHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/moveSBBOValuesToHeightmap.glsl"), TextureFormat::R32UI);
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
     }
 
     // SSBO even out steep slopes
-    EvenOutSteepSlopes evenOutSteepSlopesSSBO = EvenOutSteepSlopes(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/evenOutSteepSlopesSSBO.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale);
+    EvenOutSteepSlopes evenOutSteepSlopesSSBO = EvenOutSteepSlopes(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/evenOutSteepSlopesSSBO.glsl"), TextureFormat::R32I, frustumHeight, heightColumnScale);
     evenOutSteepSlopesSSBO.terrainSize = terrainSize;
     evenOutSteepSlopesSSBO.slopeThreshold = slopeThreshold;
     evenOutSteepSlopesSSBO.roughness = roughness;

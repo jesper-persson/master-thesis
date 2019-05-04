@@ -85,7 +85,7 @@ public:
     Quad() {
         vao = QuadUtils::createVAO();
         indexBuffer = QuadUtils::createIndexBuffer();
-        textureId = loadPNGTexture("images/sample.png");
+        textureId = loadPNGTexture("resources/sample.png");
         position = glm::vec3(0, 0, 0);
         scale = glm::vec3(1, 1, 1);
     }

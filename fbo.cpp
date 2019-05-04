@@ -10,8 +10,7 @@ enum class TextureFormat {
     RGBA16F, R32UI, R32I, RGBA32UI, RGBA32I, RG32UI, R32F
 };
 
-class FBOWrapper
-{
+class FBOWrapper {
 public:
     GLuint fboId;
     GLuint textureId;
@@ -24,8 +23,7 @@ public:
     }
 };
 
-FBOWrapper createFBOForDepthTexture(int textureWidth, int textureHeight)
-{
+FBOWrapper createFBOForDepthTexture(int textureWidth, int textureHeight) {
     GLuint fboId = 0;
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
@@ -54,8 +52,7 @@ FBOWrapper createFBOForDepthTexture(int textureWidth, int textureHeight)
     return fbo;
 }
 
-FBOWrapper createFrameBufferSingleTexture(int textureWidth, int textureHeight, TextureFormat textureFormat)
-{
+FBOWrapper createFrameBufferSingleTexture(int textureWidth, int textureHeight, TextureFormat textureFormat) {
     GLuint fboId = 0;
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);

@@ -17,74 +17,46 @@ extern int numIterationsEvenOutSlopes;
 extern int numIterationsDisplaceMaterialToContour;
 extern float heightmapSize;
 
-bool parseBoolean(string value)
-{
-    if (value == "true" || value == "TRUE")
-    {
+bool parseBoolean(string value) {
+    if (value == "true" || value == "TRUE") {
         return true;
-    }
-    else if (value == "false" || value == "FALSE")
-    {
+    } else if (value == "false" || value == "FALSE") {
         return false;
     }
     throw invalid_argument("Invalid boolean value");
 }
 
-void applySetting(string setting, string stringValue)
-{
-    if (setting == "evenOutSteepSlopes")
-    {
+void applySetting(string setting, string stringValue) {
+    if (setting == "evenOutSteepSlopes") {
         evenOutSteepSlopes = parseBoolean(stringValue);
-    }
-    else if (setting == "numIterationsEvenOutSlopes")
-    {
+    } else if (setting == "numIterationsEvenOutSlopes") {
         numIterationsEvenOutSlopes = stoi(stringValue);
-    }
-    else if (setting == "slopeThreshold")
-    {
+    } else if (setting == "slopeThreshold") {
         slopeThreshold = stof(stringValue);
-    }
-    else if (setting == "compression")
-    {
+    } else if (setting == "compression") {
         compression = stof(stringValue);
-    }
-    else if (setting == "roughness")
-    {
+    } else if (setting == "roughness") {
         roughness = stof(stringValue);
-    }
-    else if (setting == "heightmapSize")
-    {
+    } else if (setting == "heightmapSize") {
         heightmapSize = stof(stringValue);
-    }
-    else if (setting == "terrainSize")
-    {
+    } else if (setting == "terrainSize") {
         terrainSize = stoi(stringValue);
-    }
-    else if (setting == "numIterationsBlurNormals")
-    {
+    } else if (setting == "numIterationsBlurNormals") {
         numIterationsBlurNormals = stof(stringValue);
-    }
-    else if (setting == "numVerticesPerRow")
-    {
+    } else if (setting == "numVerticesPerRow") {
         numVerticesPerRow = stof(stringValue);
-    }
-    else if (setting == "numIterationsDisplaceMaterialToContour")
-    {
+    } else if (setting == "numIterationsDisplaceMaterialToContour") {
         numIterationsDisplaceMaterialToContour = stof(stringValue);
-    }
-    else
-    {
+    } else {
         throw invalid_argument("No setting exists for " + setting);
     }
 }
 
-void applySettings(string settingFile)
-{
+void applySettings(string settingFile) {
     // Read file
     std::ifstream inputFile;
     inputFile.open(settingFile);
-    if (!inputFile)
-    {
+    if (!inputFile) {
         cerr << "Could not open file " << settingFile << endl;
         exit(1);
     }
@@ -93,8 +65,7 @@ void applySettings(string settingFile)
 
     string setting;
     string value;
-    while (!buffer.eof())
-    {
+    while (!buffer.eof()) {
         getline(buffer, setting, '=');
         getline(buffer, value);
         applySetting(setting, value);

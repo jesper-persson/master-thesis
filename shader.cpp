@@ -8,12 +8,10 @@
 
 using namespace std;
 
-string fileContentToString(string pathToFile)
-{
+string fileContentToString(string pathToFile) {
     std::ifstream inputFile;
     inputFile.open(pathToFile);
-    if (!inputFile)
-    {
+    if (!inputFile) {
         cerr << "Could not open file " << pathToFile << endl;
         exit(1);
     }
@@ -32,15 +30,13 @@ GLuint createShader(string sourcePath, GLuint type) {
     // Error check
     GLint isCompiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
-    if (isCompiled == GL_FALSE)
-    {
+    if (isCompiled == GL_FALSE) {
         cout << "Error file " << sourcePath << endl;
         GLint maxLength = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
         std::vector<GLchar> infoLog(maxLength);
         glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
-        for (auto const &value : infoLog)
-        {
+        for (auto const &value : infoLog) {
             cout << value;
         }
     }
@@ -48,8 +44,7 @@ GLuint createShader(string sourcePath, GLuint type) {
     return shader;
 }
 
-GLuint createShaderProgram(string vertexSourcePath, string tessellationControlSourcePath, string tesselationEvaluationSourcePath, string fragmentSourcePath)
-{
+GLuint createShaderProgram(string vertexSourcePath, string tessellationControlSourcePath, string tesselationEvaluationSourcePath, string fragmentSourcePath) {
     GLuint vertexShader = createShader(vertexSourcePath, GL_VERTEX_SHADER);
     GLuint tessellationControlShader = createShader(tessellationControlSourcePath, GL_TESS_CONTROL_SHADER);
     GLuint tesselationEvaluationShader = createShader(tesselationEvaluationSourcePath, GL_TESS_EVALUATION_SHADER);
@@ -64,14 +59,12 @@ GLuint createShaderProgram(string vertexSourcePath, string tessellationControlSo
     // Error check
     GLint isLinked = 0;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
-    if (isLinked == GL_FALSE)
-    {
+    if (isLinked == GL_FALSE) {
         GLint maxLength = 0;
         glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
         vector<GLchar> infoLog(maxLength);
         glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, &infoLog[0]);
-        for (auto const &value : infoLog)
-        {
+        for (auto const &value : infoLog) {
             cout << value;
         }
     }
@@ -79,8 +72,7 @@ GLuint createShaderProgram(string vertexSourcePath, string tessellationControlSo
     return shaderProgram;
 }
 
-GLuint createShaderProgram(string vertexSourcePath, string fragmentSourcePath)
-{
+GLuint createShaderProgram(string vertexSourcePath, string fragmentSourcePath) {
     GLuint vertexShader = createShader(vertexSourcePath, GL_VERTEX_SHADER);
     GLuint fragmentShader = createShader(fragmentSourcePath, GL_FRAGMENT_SHADER);
 
@@ -91,14 +83,12 @@ GLuint createShaderProgram(string vertexSourcePath, string fragmentSourcePath)
     // Error check
     GLint isLinked = 0;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
-    if (isLinked == GL_FALSE)
-    {
+    if (isLinked == GL_FALSE) {
         GLint maxLength = 0;
         glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
         vector<GLchar> infoLog(maxLength);
         glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, &infoLog[0]);
-        for (auto const &value : infoLog)
-        {
+        for (auto const &value : infoLog) {
             cout << value;
         }
     }

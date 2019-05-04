@@ -38,7 +38,6 @@ public:
 
     bool doClear;
 
-    // Offset for only uppdating part of texture
     ActiveArea activeArea;
 
     // Should be either GL_NEAREST or GL_LINEAR
