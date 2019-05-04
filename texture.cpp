@@ -28,7 +28,7 @@ GLuint createTextureForHeightmap(int size) {
 		for (int x = 0; x < w; x++) {
 			int i = (y * w + x);
 
-			pixels[i] = 0.5f;
+			pixels[i] = 0.5f / 3.0f;
 		}
 	}
 

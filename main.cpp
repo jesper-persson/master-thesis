@@ -18,7 +18,7 @@
 // Non-settings parameters
 const int WINDOW_HEIGHT = 1200;
 const int WINDOW_WIDTH = 1800;
-const int frustumHeight = 10;
+const int frustumHeight = 30;
 const int heightColumnScale = 10000;
 const float boundingBoxMargin = 4.0f;
 const bool useSSBO = true;
@@ -196,8 +196,8 @@ int main(int argc, char* argv[])
     ground.textureId = loadPNGTexture("images/white.png");
     ground.normalmap = loadPNGTexture("images/normalmap2.png");
     ground.heightColumnScale = heightColumnScale;
-    // ground.heightmap = createTextureForHeightmap(heightmapSize);
-    ground.heightmap = loadPNGTextureForHeightmap("images/heightmap2.png");
+    ground.heightmap = createTextureForHeightmap(heightmapSize);
+    // ground.heightmap = loadPNGTextureForHeightmap("images/heightmap2.png");
 
     Camera camera;
 
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
 
     // Active areas
     vector<ActiveArea> activeAreas;
-    activeAreas.push_back(ActiveArea(0, 0, heightmapSize / 2, heightmapSize / 2));
+    activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
     // activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));

@@ -28,6 +28,10 @@ vec2 texCoordToCoordinate(vec2 texCoord) {
     return texCoord * textureWidth;
 }
 
+int intCoordinateToSSBOIndex(vec2 intCoordinate) {
+    return int(intCoordinate.y) * textureWidth + int(intCoordinate.x);
+} 
+
 void main() {
     // Read how much snow this pixel should move
 
@@ -47,23 +51,12 @@ void main() {
 
     uint heightmapValue = texture(texture2, texCoordInFS).r;
 
-    // Move my penetration to cloest seed
-    //  data[indexCloest] += -int(penetration * 10000);
-
-
-
-    // data[indexMe] += int(penetration * 10000);
-
-    // uint + int
-
-    // if (texCoordInFS.x > 0.25 && texCoordInFS.x < 0.65 && texCoordInFS.y > 0.25 && texCoordInFS.y < 0.75) {
-        atomicAdd(data[indexMe], heightmapValue - penetration);
-        atomicAdd(data[indexCloest], uint(penetration * (1 - compression)));
-
-        // data[indexMe] = 1 * 100000;
-    // }
-
-    // data[int(cloestSeed.y) * textureWidth + int(cloestSeed.x)] = penetration;
-
-
+    int numDivisions = int(penetration) / 5000;
+    penetration = penetration / numDivisions;
+    atomicAdd(data[indexMe], heightmapValue - penetration * numDivisions );
+    for (int i = 0; i < numDivisions; i++) {
+        vec2 target = cloestSeed + normalize(dirClosest) * (length(dirClosest) + i);
+        int targetIndex = intCoordinateToSSBOIndex(target);
+        atomicAdd(data[targetIndex], uint(penetration * (1 - compression)));
+    }
 }
