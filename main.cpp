@@ -289,6 +289,8 @@ int main(int argc, char* argv[])
     blurSnowHeightmap.sampling = GL_LINEAR;
     blurSnowHeightmap.inputTexturesAreFloat = true;
 
+    calculateNormalsOperation.execute(ground.heightmap, 0);
+    blurSnowHeightmap.execute(calculateNormalsOperation.getTextureResult(), 0);
     ground.normalmapMacro = blurSnowHeightmap.getTextureResult();
 
     // SSBO for snow distribution
