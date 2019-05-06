@@ -180,10 +180,10 @@ Model loadUsingTinyObjLoader(std::string filename) {
 		std::cerr << err << std::endl;
 	}
 
-	std::vector<float> vertices;
-	std::vector<float> normals;
-	std::vector<float> textures;
-	std::vector<int> indices;
+	std::vector<float>* vertices = new std::vector<float>();
+	std::vector<float>* normals = new std::vector<float>();
+	std::vector<float>* textures = new std::vector<float>();
+	std::vector<int>* indices = new std::vector<int>();
 
 	// Loop over shapes
 	int i = 0;
@@ -197,15 +197,15 @@ Model loadUsingTinyObjLoader(std::string filename) {
 			// Loop over vertices in the face.
 			for (size_t v = 0; v < fv; v++) {
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
-				normals.push_back(attrib.normals[3 * idx.normal_index + 0]);
-				normals.push_back(attrib.normals[3 * idx.normal_index + 1]);
-				normals.push_back(attrib.normals[3 * idx.normal_index + 2]);
-				textures.push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
-				textures.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
-				indices.push_back(i);
+				vertices->push_back(attrib.vertices[3 * idx.vertex_index + 0]);
+				vertices->push_back(attrib.vertices[3 * idx.vertex_index + 1]);
+				vertices->push_back(attrib.vertices[3 * idx.vertex_index + 2]);
+				normals->push_back(attrib.normals[3 * idx.normal_index + 0]);
+				normals->push_back(attrib.normals[3 * idx.normal_index + 1]);
+				normals->push_back(attrib.normals[3 * idx.normal_index + 2]);
+				textures->push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
+				textures->push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
+				indices->push_back(i);
 				i++;
 			}
 			index_offset += fv;
@@ -215,17 +215,22 @@ Model loadUsingTinyObjLoader(std::string filename) {
 		}
 	}
 
-	float *vertexData = &vertices[0];
-	float *normalData = &normals[0];
-	float *textureData = &textures[0];
-	int *indexData = &indices[0];
+	float *vertexData = &(*vertices)[0];
+	float *normalData =&(*normals)[0];
+	float *textureData = &(*textures)[0];
+	int *indexData = &(*indices)[0];
 
     Model model;
-    model.vao = ModelUtils::createVAO(vertexData, vertices.size(),
-                                  normalData, normals.size(),
-                                  textureData, textures.size());
-    model.indexBuffer = ModelUtils::createIndexBuffer(indexData, indices.size());
-    model.numIndices = indices.size();
+    model.vao = ModelUtils::createVAO(vertexData, vertices->size(),
+                                  normalData, normals->size(),
+                                  textureData, textures->size());
+    model.indexBuffer = ModelUtils::createIndexBuffer(indexData, indices->size());
+    model.numIndices = indices->size();
+
+    delete vertices;
+    delete normals;
+    delete textures;
+    delete indices;
 
     return model;   
 }

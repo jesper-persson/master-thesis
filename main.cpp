@@ -65,6 +65,54 @@ public:
     glm::vec3 forward = glm::normalize(glm::vec3(0.0f, 0, -1.0f));
 };
 
+class RigidBody {
+public:
+    glm::vec3 velocity = glm::vec3(0, 0,0 );
+};
+
+void controlRigidBody(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, RigidBody &rb,float dt) {
+     glm::vec3 carForward = -1.0f * forward;
+    float speed = 13.0f * dt;
+    glm::vec3 carLeft = glm::cross(up, carForward);
+
+    // rb.velocity = glm::normalize(carForward) * glm::length(rb.velocity);
+    
+    if (isKeyDown(GLFW_KEY_W)) {
+        rb.velocity = rb.velocity + carForward * speed;
+    }
+    if (isKeyDown(GLFW_KEY_S)) {
+        rb.velocity = rb.velocity - carForward * speed;
+    }
+    if (glm::length(rb.velocity) > 15.0f) {
+        rb.velocity = glm::normalize(rb.velocity) * 15.0f;
+    }
+    if (glm::length(rb.velocity) > 0.00001) {
+        float friction = 0.008f;
+        rb.velocity = rb.velocity + glm::normalize(rb.velocity) * glm::length(rb.velocity) * -1.0f * friction;
+    }
+
+    position = position + rb.velocity * dt;
+
+    float rotationSpeed =  glm::length(rb.velocity) * dt * 0.15f;
+    rotationSpeed = min(rotationSpeed, 0.01f);
+    if (isKeyDown(GLFW_KEY_LEFT)) {
+        forward = glm::normalize(glm::rotate(forward, rotationSpeed, glm::vec3(0, 1, 0)));
+        up = glm::normalize(glm::rotate(up, rotationSpeed, glm::vec3(0, 1, 0)));
+    }
+    if (isKeyDown(GLFW_KEY_RIGHT)) {
+        forward = glm::normalize(glm::rotate(forward, -rotationSpeed, glm::vec3(0, 1, 0)));
+        up = glm::normalize(glm::rotate(up, -rotationSpeed, glm::vec3(0, 1, 0)));
+    }
+    // if (isKeyDown(GLFW_KEY_UP)) {
+    //     forward = glm::normalize(glm::rotate(forward, rotationSpeed, carLeft));
+    //     up = glm::normalize(glm::rotate(up, rotationSpeed, carLeft));
+    // }
+    // if (isKeyDown(GLFW_KEY_DOWN)) {
+    //     forward = glm::normalize(glm::rotate(forward, -rotationSpeed, carLeft));
+    //     up = glm::normalize(glm::rotate(up, -rotationSpeed, carLeft));
+    // }
+}
+
 void controlObject(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, float dt) {
     float speed = 15.0f * dt;
     float rotationSpeed = speed / 8.0f;
@@ -164,6 +212,14 @@ int main(int argc, char* argv[]) {
     glm::vec3 terrainOrigin = glm::vec3(0, 0, 0);
 
     // Create objects in the scene
+    Model car = loadUsingTinyObjLoader("resources/Jeep.obj");
+    // car.forward = glm::vec3(0, 0, 1);
+    car.scale = glm::vec3(0.07f, 0.07f, 0.07f);
+    car.position = glm::vec3(5, 4.5f, 0);
+    car.textureId = loadPNGTexture("resources/gray.png");
+    car.useNormalMapping = false;
+    RigidBody carRigidBody;
+
     Model box = Box::createBox();
     box.scale = glm::vec3(2, 4, 2);
     box.position = glm::vec3(5, 8.001f, 0);
@@ -194,8 +250,8 @@ int main(int argc, char* argv[]) {
 
     Camera camera;
 
-    // When true, the arrow keys are used to control a box instead of the camera
-    bool controlBox = false;
+    // When 0 = camera, 1 = box, 2 = car
+    int objectControl = 0;
 
     float quadSize = 300;
     Quad quad;
@@ -237,7 +293,7 @@ int main(int argc, char* argv[]) {
     IntHeightmapToFloat intHeightmapToFloat = IntHeightmapToFloat(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/intHeightmapToFloat.glsl"), TextureFormat::R32F, heightColumnScale);
     JumpFlooding jumpFlooding = JumpFlooding(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/jumpFlooding.glsl"), log2(heightmapSize));
     GLuint createPenetrationTextureShader = createShaderProgram("shaders/basicVS.glsl", "shaders/createPenetrationTexture.glsl");
-    CreatePenetrationTexture createPenetartionTextureOperation = CreatePenetrationTexture(heightmapSize, heightmapSize, createPenetrationTextureShader, TextureFormat::RGBA32I, frustumHeight, heightColumnScale);
+    CreatePenetrationTexture createPenetrationTextureOperation = CreatePenetrationTexture(heightmapSize, heightmapSize, createPenetrationTextureShader, TextureFormat::RGBA32I, frustumHeight, heightColumnScale);
     PingPongTextureOperation blur = PingPongTextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/blur.glsl"), 4, TextureFormat::RGBA16F);
     blur.timesRepeat = numIterationsBlurNormals;
     blur.sampling = GL_LINEAR;
@@ -304,19 +360,24 @@ int main(int argc, char* argv[]) {
         glm::mat4 worldToCamera = glm::lookAt(camera.position, cameraLookAtPosition, camera.up);
 
         if (isKeyPressed(GLFW_KEY_T)) {
-            controlBox = !controlBox;
+            objectControl = (objectControl + 1) % 3;
         }
 
-        if (controlBox) {
-            controlObject(box.position, box.forward, box.up, dt * 0.7f);
+        if (objectControl == 1) {
+            controlObject(box.position, box.forward, box.up, dt);
             glm::vec3 fromPosition = box.position - box.forward * 16.0f + box.up * 14.0f;
             worldToCamera = glm::lookAt(fromPosition, box.position, box.up);
-        } else {
+        } else if (objectControl == 0) {
             controlObject(camera.position, camera.forward, camera.up, dt);
             // box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
             // box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
             // box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
             // box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+        } else if (objectControl == 2) {
+            controlRigidBody(car.position, car.forward, car.up, carRigidBody, dt);
+            glm::vec3 forward = -1.0f * car.forward;    
+            glm::vec3 fromPosition = car.position - forward * 30.0f + car.up * 27.0f;
+            worldToCamera = glm::lookAt(fromPosition, car.position, car.up);
         }
 
         footstep.update(dt*1.0f);
@@ -332,7 +393,12 @@ int main(int argc, char* argv[]) {
 
         // Update active areas
         timing.begin("UPDATE_ACTIVE_AREAS");
-        // activeAreas.clear();
+        activeAreas.clear();
+        glm::vec3 carArea = glm::vec3(6, 6, 6);
+        setActiveAreaForObject(terrainOrigin, terrainSize, car.position, carArea, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, car.position, carArea, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, car.position, carArea, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, car.position, carArea, activeAreas);
         // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
         // setActiveAreaForObject(terrainOrigin, terrainSize, box2.position, box2.scale, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
@@ -344,6 +410,7 @@ int main(int argc, char* argv[]) {
         glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        car.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         footstep.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
@@ -355,8 +422,8 @@ int main(int argc, char* argv[]) {
 
         timing.begin("CREATE_PENETRATION_TEXTURE");
         for (unsigned i = 0; i < activeAreas.size(); i++) {
-            createPenetartionTextureOperation.activeArea = activeAreas[i];
-            createPenetartionTextureOperation.execute(FBODepthTexture.textureId, ground.heightmap);
+            createPenetrationTextureOperation.activeArea = activeAreas[i];
+            createPenetrationTextureOperation.execute(FBODepthTexture.textureId, ground.heightmap);
         }
         timing.end("CREATE_PENETRATION_TEXTURE");
 
@@ -364,7 +431,7 @@ int main(int argc, char* argv[]) {
         for (unsigned i = 0; i < activeAreas.size(); i++) {
             jumpFlooding.activeArea = activeAreas[i];
             jumpFlooding.passIndex = 0;
-            jumpFlooding.execute(createPenetartionTextureOperation.getTextureResult(), 0);
+            jumpFlooding.execute(createPenetrationTextureOperation.getTextureResult(), 0);
         }
         timing.end("JUMP_FLOODING");
 
@@ -452,15 +519,16 @@ int main(int argc, char* argv[]) {
         // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
         ground.render(shaderProgramTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
         // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
+        car.render(shaderProgramDefault, worldToCamera, perspective);
         box.render(shaderProgramDefault, worldToCamera, perspective);
         box2.render(shaderProgramDefault, worldToCamera, perspective);
         tire.render(shaderProgramDefault, worldToCamera, perspective);
         footstep.render(shaderProgramDefault, worldToCamera, perspective);
 
         // Render helper quads
-        quad.textureId = createPenetartionTextureOperation.getTextureResult();
+        quad.textureId = createPenetrationTextureOperation.getTextureResult();
         quad.render(shaderProgramQuad, unitMatrix, orthoUI);
-        quadLL.textureId = createPenetartionTextureOperation.getTextureResult();
+        quadLL.textureId = createPenetrationTextureOperation.getTextureResult();
         quadLL.render(shaderProgramQuad, unitMatrix, orthoUI);
         timing.end("RENDER_TO_SCREEN");
 
@@ -475,7 +543,7 @@ int main(int argc, char* argv[]) {
             // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 
-        if (frameCounterGlobal % 1000 == 0) {
+        if (frameCounterGlobal % 60 == 0) {
             timing.print();
             readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
