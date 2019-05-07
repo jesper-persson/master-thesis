@@ -28,7 +28,7 @@ void main() {
         normal = normalize(TBNInFs * normal);
     }
 
-    vec3 lightPosition = vec3(20, 20, 20);
+    vec3 lightPosition = vec3(-20, 40, 20);
     // lightPosition = cameraPosWorldSpaceInFS;
     vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);

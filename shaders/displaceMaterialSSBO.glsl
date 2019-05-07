@@ -39,17 +39,21 @@ void main() {
     float lengthToClosestSeed = length(delta);
 
     if (useMultipleTargets) {
-        int numDivisions = int(ceil(int(penetration) / 5000.0));
-        penetration = penetration / numDivisions;
+        int numDivisions = int(ceil(int(penetration) / 1000.0));
+        if (numDivisions > 0) {
+            penetration = penetration / numDivisions;
+        }
         atomicAdd(data[currentSSBOIndex], heightmapValue - penetration * numDivisions);
         for (int i = 0; i < numDivisions; i++) {
-            vec2 target = cloestSeedIntCoordinate + dirToClosestSeed * (lengthToClosestSeed + i);
+            vec2 target = cloestSeedIntCoordinate + dirToClosestSeed * (i + 1);
             int targetSSBOIndex = intCoordinateToSSBOIndex(target);
             atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
         }
     } else {
         atomicAdd(data[currentSSBOIndex], heightmapValue - penetration);
         int targetSSBOIndex = intCoordinateToSSBOIndex(cloestSeedIntCoordinate);
-        atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
+        if (penetration > 0) {
+            atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
+        }
     }
 }

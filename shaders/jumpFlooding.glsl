@@ -31,9 +31,24 @@ vec2 intCoordinateToTexCoord(vec2 intCoord) {
 
 const int distanceMetricScale = 1000;
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec2 neighbors[8];
+
 void main() {
     int offset =  int(pow(2, log2(textureWidth) - passIndex - 1));
     float step = float(1)/textureWidth;
+
+    neighbors[0] = texCoordInFS + vec2(step * offset * -1, step * offset * 1);
+    neighbors[1] = texCoordInFS + vec2(step * offset * 0, step * offset * 1);
+    neighbors[2] = texCoordInFS + vec2(step * offset * 1, step * offset * 1);
+    neighbors[3] = texCoordInFS + vec2(step * offset * -1, step * offset * 0);
+    neighbors[4] = texCoordInFS + vec2(step * offset * 1, step * offset * 0);
+    neighbors[5] = texCoordInFS + vec2(step * offset * -1, step * offset * -1);
+    neighbors[6] = texCoordInFS + vec2(step * offset * 0, step * offset * -1);
+    neighbors[7] = texCoordInFS + vec2(step * offset * 1, step * offset * -1);
 
     float minTexCoordX = (activeCenterX - activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
     float maxTexCoordX = (activeCenterX + activeWidth/float(2) + textureWidth/float(2))/float(textureWidth); 
@@ -44,25 +59,28 @@ void main() {
     if (current.b == -2 || current.b == -3) { // Discard if we are a seeds
         result = current;
     } else {
-        for (int y = -1; y < 2; y++) {
-            for (int x = -1; x < 2; x++) {
-                vec2 newTexCoord = texCoordInFS + vec2(step * offset * x, step * offset * y);
-                ivec4 neighbour = texture(texture1, newTexCoord);
-                vec2 pointTexCoord = intCoordinateToTexCoord(neighbour.xy);
+        
+        int randomStart = int(ceil(rand(texCoordInFS) * 7.0));
+        for (int j = 0; j < 8; j++) {
+            randomStart++;
+            int index = (randomStart) % 8;
+            vec2 newTexCoord = neighbors[index];
+            ivec4 neighbour = texture(texture1, newTexCoord);
+            vec2 pointTexCoord = intCoordinateToTexCoord(neighbour.xy);
 
-                // neighbour.b == -2 checks for obstilce
-                if (neighbour.b == -2 || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y < 0 || newTexCoord.y > 1
-                    || newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY
-                    || pointTexCoord.x < minTexCoordX || pointTexCoord.x > maxTexCoordX || pointTexCoord.y < minTexCoordY || pointTexCoord.y > maxTexCoordY) {
-                    continue;
-                }
-
-                int potentialClosest = int(distanceMetricScale * distanceMetric(texCoordToIntCoordinate(texCoordInFS), neighbour.xy));
-                if (potentialClosest < current.z || current.z < -0.1) {
-                    current.z = potentialClosest;
-                    current.xy = neighbour.xy;
-                }
+            // neighbour.b == -2 checks for obstilce
+            if (neighbour.b == -2 || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y < 0 || newTexCoord.y > 1
+                || newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY
+                || pointTexCoord.x < minTexCoordX || pointTexCoord.x > maxTexCoordX || pointTexCoord.y < minTexCoordY || pointTexCoord.y > maxTexCoordY) {
+                continue;
             }
+
+            int potentialClosest = int(distanceMetricScale * distanceMetric(texCoordToIntCoordinate(texCoordInFS), neighbour.xy));
+            if (potentialClosest < current.z || current.z < 0) {
+                current.z = potentialClosest;
+                current.xy = neighbour.xy;
+            }
+        
         }
         result = current;
     }

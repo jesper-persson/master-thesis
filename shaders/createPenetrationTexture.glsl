@@ -23,23 +23,23 @@ void main() {
     uint heightmapValue = uint(texture(texture2, texCoordInFS).r);
     uint height = min(heightmapValue, depthHeight);
     int penetration = int(heightmapValue) - int(height);
-    float prevPenetration = depthValue;
 
     bool isPenetrating = penetration > 0;
-    // prevPenetration > 0.00001 checks for first frame, where prevPenetration can be 0. Thus, it is assumed that
+    // depthValue > 0.00001 checks for first frame, where depthValue can be 0. Thus, it is assumed that
     // nothing penetrates the first frame.
-    bool wasPenetrating = prevPenetration > 0.0001 && prevPenetration < 0.9999;
+    bool isObstacle = depthValue > 0.0001 && depthValue < 0.9999
+        && (depthValue * heightColumnScale * frustumHeight - heightmapValue) <= 1000;
 
-    if (isPenetrating && !wasPenetrating) {
+    if (isPenetrating && !isObstacle) {
         result = ivec4(0, 0, -1, 0);
     } 
-    else if (isPenetrating && wasPenetrating) {
+    else if (isPenetrating && isObstacle) {
         result = ivec4(0, 0, -1, 0);
     }
-    else if (!isPenetrating && wasPenetrating) {
+    else if (!isPenetrating && isObstacle) {
         result = ivec4(0, 0, -2, 0); // the -2 indicates obstacle
     }
-    else if (!isPenetrating && !wasPenetrating) {
+    else if (!isPenetrating && !isObstacle) {
         result = ivec4(texCoordToIntCoordinate(texCoordInFS).rg, -3, 0); // -3 indicates seed
     }
     result.w = penetration; 

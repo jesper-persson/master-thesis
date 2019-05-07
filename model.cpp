@@ -121,6 +121,7 @@ public:
     GLuint indexBuffer;
     GLuint textureId;
     int numIndices;
+    int startIndex;
 
     GLuint normalMap;
     bool useNormalMapping;
@@ -132,6 +133,7 @@ public:
         useNormalMapping = false;
         forward = glm::vec3(0, 0, 1);
         up = glm::vec3(0, 1, 0);
+        startIndex = 0;
     }
 
     void render(GLuint shaderProgram, glm::mat4 worldToCamera, glm::mat4 projection) {
@@ -164,7 +166,7 @@ public:
         
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, (void*)(startIndex * sizeof(GLuint)));
     }
 };
 
