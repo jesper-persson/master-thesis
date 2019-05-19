@@ -33,23 +33,23 @@ void main() {
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase);
-    normal = normalize(normalDetail + normalBase);
+    // normal = normalize(normalDetail + normalBase);
 
     // lightPosition = cameraPosWorldSpaceInFS;
     // vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
     vec3 directionToLight = -1 * lightDir;
     vec3 directionToCamera = normalize(cameraPosWorldSpaceInFS - fragPosWorldSpaceInFS);
 
-    float ambient = 0.79;
+    float ambient = 0.73;
     float diffuseAmount = 0.20;
     float specularAmount = 0.001;
     vec4 color = vec4(0.99, 0.99, 1, 1);
 
     // If sand
-    ambient = 0.4;
-    diffuseAmount = 0.6;
-    specularAmount = 0.01;
-    color = vec4(0.68, 0.51, 0.28, 1);
+    // ambient = 0.4;
+    // diffuseAmount = 0.6;
+    // specularAmount = 0.01;
+    // color = vec4(0.68, 0.51, 0.28, 1);
 
     // Diffuse
     float intensity = dot(normal, directionToLight);

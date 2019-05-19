@@ -73,10 +73,8 @@ public:
 
 void controlRigidBody(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, RigidBody &rb,float dt) {
      glm::vec3 carForward = -1.0f * forward;
-    float speed = 13.0f * dt;
+    float speed = 18.0f * dt;
     glm::vec3 carLeft = glm::cross(up, carForward);
-
-    // rb.velocity = glm::normalize(carForward) * glm::length(rb.velocity);
     
     if (isKeyDown(GLFW_KEY_W)) {
         rb.velocity = rb.velocity + carForward * speed;
@@ -94,7 +92,7 @@ void controlRigidBody(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, Ri
 
     position = position + rb.velocity * dt;
 
-    float rotationSpeed =  glm::length(rb.velocity) * 0.0005f;
+    float rotationSpeed =  glm::length(rb.velocity) * 0.009f;
     rotationSpeed = min(rotationSpeed, 0.01f);
     if (isKeyDown(GLFW_KEY_LEFT)) {
         forward = glm::normalize(glm::rotate(forward, rotationSpeed, glm::vec3(0, 1, 0)));
@@ -389,8 +387,17 @@ int main(int argc, char* argv[]) {
             // box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
         } else if (objectControl == 2) {
             controlRigidBody(car1.position, car1.forward, car1.up, carRigidBody, dt);
-            glm::vec3 forward = -1.0f * car1.forward;    
-            glm::vec3 fromPosition = car1.position - forward * 30.0f + car1.up * 27.0f;
+            // glm::vec3 right = glm::cross(car1.up, car1.forward);
+            // glm::vec3 forward = -1.0f * car1.forward; 
+            // glm::vec3 fromPosition = car1.position - forward * 30.0f + car1.up * 27.0f;
+            // glm::vec3 fromPosition = car1.position - forward * 30.0f + right * 20.0f + car1.up * 20.0f;
+            
+            float cameraSpeed = 10.0f * dt;
+            glm::vec3 toCar = glm::normalize(car1.position - camera.position);
+            if (glm::length(car1.position - camera.position) > 4) {
+                camera.position = camera.position + toCar * cameraSpeed;
+            }
+            glm::vec3 fromPosition = camera.position + car1.up * 30.0f;
             worldToCamera = glm::lookAt(fromPosition, car1.position, car1.up);
         }
 
