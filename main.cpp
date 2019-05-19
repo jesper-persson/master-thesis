@@ -24,6 +24,7 @@ int windowHeight;
 int windowWidth;
 int frustumHeight;
 bool useSSBO;
+bool fullscreen;
 float terrainSize; // World space size of terrain mesh.
 int numVerticesPerRow; // Resolution of terrain mesh.
 float heightmapSize;
@@ -179,8 +180,22 @@ int main(int argc, char* argv[]) {
         cerr << "glfwInit() failed" << endl;
     }
 
-    string title = "Master's thesis";
-    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, title.c_str(), NULL, NULL);
+    string title = "Terrain deformation";
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    GLFWwindow *window;
+    if (fullscreen == true) {
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        window = glfwCreateWindow(mode->width, mode->height, title.c_str(), monitor, NULL);
+        glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        windowWidth = mode->width;
+        windowHeight = mode->height;
+    } else {
+        window = glfwCreateWindow(windowWidth, windowHeight, title.c_str(), NULL, NULL);
+    }
     if (!window) {
         cerr << "Failed to create window" << endl;
     }
@@ -357,6 +372,9 @@ int main(int argc, char* argv[]) {
             // cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
             // cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
             // cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
+        }
+        if (isKeyPressed(GLFW_KEY_ESCAPE)) {
+            break;
         }
 
         if (objectControl == 1) {
@@ -556,7 +574,6 @@ int main(int argc, char* argv[]) {
         }
 
         if (frameCounterGlobal % 20 == 0) {
-
             // timing.print();
             // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }

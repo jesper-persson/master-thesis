@@ -10,6 +10,7 @@ extern float activeAreaMargin;
 extern int windowHeight;
 extern int windowWidth;
 extern int frustumHeight;
+extern bool fullscreen;
 extern bool useSSBO;
 extern float terrainSize;
 extern int numVerticesPerRow;
@@ -59,6 +60,8 @@ void applySetting(string setting, string stringValue) {
         frustumHeight = stoi(stringValue);
     } else if (setting == "useSSBO") {
         useSSBO = parseBoolean(stringValue);
+    } else if (setting == "fullscreen") {
+        fullscreen = parseBoolean(stringValue);
     } else {
         throw invalid_argument("No setting exists for " + setting);
     }

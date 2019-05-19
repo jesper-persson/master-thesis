@@ -1,5 +1,6 @@
 windowHeight=900
 windowWidth=1800
+fullscreen=true
 frustumHeight=30.0f
 activeAreaMargin=4.0f
 useSSBO=true
