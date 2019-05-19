@@ -93,7 +93,7 @@ void controlRigidBody(glm::vec3 &position, glm::vec3 &forward, glm::vec3 &up, Ri
 
     position = position + rb.velocity * dt;
 
-    float rotationSpeed =  glm::length(rb.velocity) * dt * 0.55f;
+    float rotationSpeed =  glm::length(rb.velocity) * 0.0005f;
     rotationSpeed = min(rotationSpeed, 0.01f);
     if (isKeyDown(GLFW_KEY_LEFT)) {
         forward = glm::normalize(glm::rotate(forward, rotationSpeed, glm::vec3(0, 1, 0)));
@@ -236,10 +236,10 @@ int main(int argc, char* argv[]) {
     ground.scale = glm::vec3(terrainSize, 1, terrainSize);
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("resources/white.png");
-    ground.normalmap = loadPNGTexture("resources/normalmap5.png");
+    ground.normalmap = loadPNGTexture("resources/normalmap2.png");
     ground.heightColumnScale = heightColumnScale;
     ground.heightmap = createTextureForHeightmap(heightmapSize);
-    // ground.heightmap = loadPNGTextureForHeightmap("resources/heightmap2.png");
+    // ground.heightmap = loadPNGTextureForHeightmap("resources/terrain1.png");
 
     Camera camera;
 
@@ -354,9 +354,9 @@ int main(int argc, char* argv[]) {
 
         if (isKeyPressed(GLFW_KEY_T)) {
             objectControl = (objectControl + 1) % 3;
-            cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
-            cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
-            cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
+            // cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
+            // cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
+            // cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
         }
 
         if (objectControl == 1) {
@@ -394,7 +394,7 @@ int main(int argc, char* argv[]) {
         glm::vec3 footArea = glm::vec3(3, 6, 6);
         glm::vec3 carArea = glm::vec3(6, 6, 6);
         setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
-        setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
         // Render depth texture
@@ -408,8 +408,8 @@ int main(int argc, char* argv[]) {
         // box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, windowWidth, windowHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         timing.end("RENDER_DEPTH_TEXTURE");
@@ -532,8 +532,8 @@ int main(int argc, char* argv[]) {
         // box.render(shaderProgramDefault, worldToCamera, perspective);
         // box2.render(shaderProgramDefault, worldToCamera, perspective);
         // tire.render(shaderProgramDefault, worldToCamera, perspective);
-        footstep1.render(shaderProgramDefault, worldToCamera, perspective);
-        footstep2.render(shaderProgramDefault, worldToCamera, perspective);
+        // footstep1.render(shaderProgramDefault, worldToCamera, perspective);
+        // footstep2.render(shaderProgramDefault, worldToCamera, perspective);
 
         // Render helper quads
         // quad.textureId = createPenetrationTextureOperation.getTextureResult();

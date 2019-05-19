@@ -39,7 +39,7 @@ void main() {
     float lengthToClosestSeed = length(delta);
 
     if (useMultipleTargets) {
-        int numDivisions = int(ceil(int(penetration) / 1000.0));
+        int numDivisions = int(ceil(int(penetration) / 2000.0));
         if (numDivisions > 0) {
             penetration = penetration / numDivisions;
         }

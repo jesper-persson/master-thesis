@@ -29,11 +29,11 @@ vec3 getNormalWeights(vec3 normal){
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 0.3).rgb;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 15).rgb;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase);
-    // normal = normalize(nkormalDetail + normalBase);
+    normal = normalize(normalDetail + normalBase);
 
     // lightPosition = cameraPosWorldSpaceInFS;
     // vec3 directionToLight = normalize(lightPosition - fragPosWorldSpaceInFS);
@@ -46,10 +46,10 @@ void main() {
     vec4 color = vec4(0.99, 0.99, 1, 1);
 
     // If sand
-    // ambient = 0.4;
-    // diffuseAmount = 0.6;
-    // specularAmount = 0.01;
-    // color = vec4(0.68, 0.51, 0.28, 1);
+    ambient = 0.4;
+    diffuseAmount = 0.6;
+    specularAmount = 0.01;
+    color = vec4(0.68, 0.51, 0.28, 1);
 
     // Diffuse
     float intensity = dot(normal, directionToLight);

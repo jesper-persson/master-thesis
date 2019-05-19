@@ -16,9 +16,9 @@ uniform int activeCenterY;
 out ivec4 result;
 
 float distanceMetric(vec2 d1, ivec2 d2) {
-    // return max(abs(d1.x - d2.x), abs(d1.y - d2.y));
+    return max(abs(d1.x - d2.x), abs(d1.y - d2.y));
     // return abs(d1.x - d2.x) + abs(d1.y - d2.y);
-    return sqrt( pow(d1.x - d2.x,2) + pow(d1.y - d2.y, 2));
+    //return sqrt( pow(d1.x - d2.x,2) + pow(d1.y - d2.y, 2));
 }
 
 vec2 texCoordToIntCoordinate(vec2 texCoord) {
