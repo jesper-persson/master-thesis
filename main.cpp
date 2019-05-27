@@ -392,17 +392,20 @@ int main(int argc, char* argv[]) {
             // glm::vec3 fromPosition = car1.position - forward * 30.0f + car1.up * 27.0f;
             // glm::vec3 fromPosition = car1.position - forward * 30.0f + right * 20.0f + car1.up * 20.0f;
             
+            // glm::vec3 targetPosition = car1.position;
+            glm::vec3 targetPosition = (footstep1.shoes.position + footstep2.shoes.position) / 2.0f;;
             float cameraSpeed = 10.0f * dt;
-            glm::vec3 toCar = glm::normalize(car1.position - camera.position);
-            if (glm::length(car1.position - camera.position) > 4) {
+
+            glm::vec3 toCar = glm::normalize(targetPosition - camera.position);
+            if (glm::length(targetPosition - camera.position) > 4) {
                 camera.position = camera.position + toCar * cameraSpeed;
             }
-            glm::vec3 fromPosition = camera.position + car1.up * 30.0f;
-            worldToCamera = glm::lookAt(fromPosition, car1.position, car1.up);
+            glm::vec3 fromPosition = camera.position + glm::vec3(0,1,0) * 30.0f;
+            worldToCamera = glm::lookAt(fromPosition, targetPosition, glm::vec3(0,1,0));
         }
 
-        footstep1.update(dt*1.0f);
-        footstep2.update(dt*1.0f);
+        footstep1.update(dt);
+        footstep2.update(dt);
 
         // box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
         // box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
@@ -419,7 +422,7 @@ int main(int argc, char* argv[]) {
         glm::vec3 footArea = glm::vec3(3, 6, 6);
         glm::vec3 carArea = glm::vec3(6, 6, 6);
         setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
         // Render depth texture
@@ -433,8 +436,8 @@ int main(int argc, char* argv[]) {
         // box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, windowWidth, windowHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         timing.end("RENDER_DEPTH_TEXTURE");
@@ -557,8 +560,8 @@ int main(int argc, char* argv[]) {
         // box.render(shaderProgramDefault, worldToCamera, perspective);
         // box2.render(shaderProgramDefault, worldToCamera, perspective);
         // tire.render(shaderProgramDefault, worldToCamera, perspective);
-        // footstep1.render(shaderProgramDefault, worldToCamera, perspective);
-        // footstep2.render(shaderProgramDefault, worldToCamera, perspective);
+        footstep1.render(shaderProgramDefault, worldToCamera, perspective);
+        footstep2.render(shaderProgramDefault, worldToCamera, perspective);
 
         // Render helper quads
         // quad.textureId = createPenetrationTextureOperation.getTextureResult();
