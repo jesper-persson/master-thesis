@@ -17,7 +17,7 @@ vec2 texCoordToIntCoordinate(vec2 texCoord) {
 }
 
 int texCoordToSSBOIndex(vec2 texCoord) {
-    vec2 intCoordinate = texCoordToIntCoordinate(texCoord);
+    vec2 intCoordinate = ivec2(texCoordToIntCoordinate(texCoord));
     return int(intCoordinate.y) * textureWidth + int(intCoordinate.x);
 }
 

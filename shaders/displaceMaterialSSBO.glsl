@@ -26,7 +26,7 @@ int intCoordinateToSSBOIndex(vec2 intCoordinate) {
 } 
 
 void main() {
-    vec2 currentIntCoordinate = texCoordToIntCoordinate(texCoordInFS);
+    ivec2 currentIntCoordinate = ivec2(texCoordToIntCoordinate(texCoordInFS));
     int currentSSBOIndex = intCoordinateToSSBOIndex(currentIntCoordinate);
     
     uint heightmapValue = texture(texture2, texCoordInFS).r;

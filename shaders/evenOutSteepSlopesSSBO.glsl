@@ -57,7 +57,7 @@ bool canReceiveMaterial(float obstacleValue, uint height) {
 const int numNeighbors = 8;
 
 void main() {
-    vec2 coordinate = texCoordToIntCoordinate(texCoordInFS);
+    ivec2 coordinate = ivec2(texCoordToIntCoordinate(texCoordInFS));
     int index = int(coordinate.y) * textureWidth + int(coordinate.x);
     uint ssboValue = data[index];
 

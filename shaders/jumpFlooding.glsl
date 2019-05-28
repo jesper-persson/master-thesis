@@ -75,7 +75,7 @@ void main() {
                 continue;
             }
 
-            int potentialClosest = int(distanceMetricScale * distanceMetric(texCoordToIntCoordinate(texCoordInFS), neighbour.xy));
+            int potentialClosest = int(distanceMetricScale * distanceMetric(ivec2(texCoordToIntCoordinate(texCoordInFS)), neighbour.xy));
             if (potentialClosest < current.z || current.z < 0) {
                 current.z = potentialClosest;
                 current.xy = neighbour.xy;
