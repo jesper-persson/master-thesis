@@ -392,8 +392,8 @@ int main(int argc, char* argv[]) {
             // glm::vec3 fromPosition = car1.position - forward * 30.0f + car1.up * 27.0f;
             // glm::vec3 fromPosition = car1.position - forward * 30.0f + right * 20.0f + car1.up * 20.0f;
             
-            // glm::vec3 targetPosition = car1.position;
-            glm::vec3 targetPosition = (footstep1.shoes.position + footstep2.shoes.position) / 2.0f;;
+            glm::vec3 targetPosition = car1.position;
+            // glm::vec3 targetPosition = (footstep1.shoes.position + footstep2.shoes.position) / 2.0f;;
             float cameraSpeed = 10.0f * dt;
 
             glm::vec3 toCar = glm::normalize(targetPosition - camera.position);
@@ -418,11 +418,11 @@ int main(int argc, char* argv[]) {
 
         // Update active areas
         timing.begin("UPDATE_ACTIVE_AREAS");
-        // activeAreas.clear();
+        activeAreas.clear();
         glm::vec3 footArea = glm::vec3(3, 6, 6);
         glm::vec3 carArea = glm::vec3(6, 6, 6);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
         // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
@@ -432,13 +432,13 @@ int main(int argc, char* argv[]) {
         glBindFramebuffer(GL_FRAMEBUFFER, FBODepthTexture.fboId);
         glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        //car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        //box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        //footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        //footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, windowWidth, windowHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         timing.end("RENDER_DEPTH_TEXTURE");
@@ -550,7 +550,7 @@ int main(int argc, char* argv[]) {
         // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
         ground.render(shaderProgramTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
         // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
-        //car1.render(shaderProgramDefault, worldToCamera, perspective);
+        car1.render(shaderProgramDefault, worldToCamera, perspective);
         // car2.render(shaderProgramDefault, worldToCamera, perspective);
         // car3.render(shaderProgramDefault, worldToCamera, perspective);
         // car4.render(shaderProgramDefault, worldToCamera, perspective);
