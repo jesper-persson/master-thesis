@@ -40,6 +40,7 @@ int numIterationsDisplaceMaterialToContour;
 #include "model.cpp"
 #include "quad.cpp"
 #include "terrain.cpp"
+#include "barTerrain.cpp"
 #include "fbo.cpp"
 #include "animatedFootsteps.cpp"
 #include "textureOperations.cpp"
@@ -226,9 +227,10 @@ int main(int argc, char* argv[]) {
     RigidBody carRigidBody;
 
     Model box = Box::createBox();
-    box.scale = glm::vec3(6, 4, 6);
+    box.scale = glm::vec3(8, 4, 8);
     box.position = glm::vec3(0, 5.0f, 0);
-    box.textureId = loadPNGTexture("resources/gray.png");
+    box.forward = glm::normalize(glm::vec3(0, 0, 1));
+    box.textureId = loadPNGTexture("resources/darkgray.png");
     box.useNormalMapping = false;
 
     Model box2 = Box::createBox();
@@ -245,8 +247,10 @@ int main(int argc, char* argv[]) {
     Footstep footstep1(false);
     Footstep footstep2(true);
 
-    Terrain ground(numVerticesPerRow);
+    // Terrain ground(numVerticesPerRow);
+    BarTerrain ground(heightmapSize);
     ground.scale = glm::vec3(terrainSize, 1, terrainSize);
+    // ground.scale = glm::vec3(1, 1, 1);
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("resources/white.png");
     ground.normalmap = loadPNGTexture("resources/normalmap2.png");
@@ -277,6 +281,7 @@ int main(int argc, char* argv[]) {
     // Render to screen shaders
     GLuint shaderProgramDefault = createShaderProgram("shaders/basicVS.glsl", "shaders/basicFS.glsl");
     GLuint shaderProgramTerrain = createShaderProgram("shaders/terrainVS.glsl", "shaders/terrainTCS.glsl", "shaders/terrainTES.glsl", "shaders/terrainFS.glsl");
+    GLuint shaderProgramBarTerrain = createShaderProgram("shaders/barTerrainVS.glsl", "shaders/barTerrainTCS.glsl", "shaders/barTerrainTES.glsl", "shaders/barTerrainFS.glsl");
     GLuint shaderProgramQuad = createShaderProgram("shaders/basicVS.glsl", "shaders/quad.glsl");
 
     FBOWrapper FBODepthTexture = createFBOForDepthTexture(heightmapSize, heightmapSize);
@@ -367,9 +372,9 @@ int main(int argc, char* argv[]) {
 
         if (isKeyPressed(GLFW_KEY_T)) {
             objectControl = (objectControl + 1) % 3;
-            // cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
-            // cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
-            // cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
+            cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
+            cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
+            cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
         }
         if (isKeyPressed(GLFW_KEY_ESCAPE)) {
             break;
@@ -421,9 +426,9 @@ int main(int argc, char* argv[]) {
         activeAreas.clear();
         glm::vec3 footArea = glm::vec3(3, 6, 6);
         glm::vec3 carArea = glm::vec3(6, 6, 6);
-        setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
-        setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
         // Render depth texture
@@ -432,13 +437,13 @@ int main(int argc, char* argv[]) {
         glBindFramebuffer(GL_FRAMEBUFFER, FBODepthTexture.fboId);
         glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, windowWidth, windowHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         timing.end("RENDER_DEPTH_TEXTURE");
@@ -548,9 +553,9 @@ int main(int argc, char* argv[]) {
         // Render to screen
         timing.begin("RENDER_TO_SCREEN");
         // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
-        ground.render(shaderProgramTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
+        ground.render(shaderProgramBarTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
         // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
-        car1.render(shaderProgramDefault, worldToCamera, perspective);
+        // car1.render(shaderProgramDefault, worldToCamera, perspective);
         // car2.render(shaderProgramDefault, worldToCamera, perspective);
         // car3.render(shaderProgramDefault, worldToCamera, perspective);
         // car4.render(shaderProgramDefault, worldToCamera, perspective);
@@ -561,8 +566,8 @@ int main(int argc, char* argv[]) {
         box.render(shaderProgramDefault, worldToCamera, perspective);
         // box2.render(shaderProgramDefault, worldToCamera, perspective);
         // tire.render(shaderProgramDefault, worldToCamera, perspective);
-        footstep1.render(shaderProgramDefault, worldToCamera, perspective);
-        footstep2.render(shaderProgramDefault, worldToCamera, perspective);
+        // footstep1.render(shaderProgramDefault, worldToCamera, perspective);
+        // footstep2.render(shaderProgramDefault, worldToCamera, perspective);
 
         // Render helper quads
         // quad.textureId = createPenetrationTextureOperation.getTextureResult();
