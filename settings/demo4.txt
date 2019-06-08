@@ -1,9 +1,0 @@
-terrainSize=80.0f
-numVerticesPerRow=80
-compression=0.8f
-roughness=0.6f
-slopeThreshold=3.9f
-numIterationsBlurNormals=1
-numIterationsEvenOutSlopes=7
-numIterationsDisplaceMaterialToContour=5
-heightmapSize=500.0f

@@ -62,9 +62,9 @@ bool isKeyPressed(int key) {
 
 class Camera {
 public:
-    glm::vec3 position = glm::vec3(-19.80183792114257812500, 19.73564529418945312500, 5.25499439239501953125);
-    glm::vec3 forward = glm::normalize(glm::vec3(0.50740671157836914062, -0.81563264131546020508, 0.27799618244171142578));
-    glm::vec3 up = glm::normalize(glm::vec3(0.72259646654129028320, 0.57850056886672973633, 0.37840658426284790039));
+    glm::vec3 position = glm::vec3( 13.41851043701171875000, 22.74206542968750000000, 0.00000000000000000000);
+    glm::vec3 forward = glm::normalize(glm::vec3(-0.72402071952819824219, -0.68977826833724975586, 0.00000000000000000000));
+    glm::vec3 up = glm::normalize(glm::vec3(-0.68977886438369750977, 0.72402012348175048828, 0.00000000000000000000));
 };
 
 class RigidBody {
@@ -227,17 +227,11 @@ int main(int argc, char* argv[]) {
     RigidBody carRigidBody;
 
     Model box = Box::createBox();
-    box.scale = glm::vec3(8, 4, 8);
-    box.position = glm::vec3(0, 5.0f, 0);
-    box.forward = glm::normalize(glm::vec3(0, 0, 1));
-    box.textureId = loadPNGTexture("resources/darkgray.png");
+    box.scale = glm::vec3(8, 6, 8);
+    box.position = glm::vec3(0, 6.0f, 0);
+    box.forward = glm::normalize(glm::vec3(1, 0, 1));
+    box.textureId = loadPNGTexture("resources/blue.png");
     box.useNormalMapping = false;
-
-    Model box2 = Box::createBox();
-    box2.scale = glm::vec3(20, 7, 20.0f);
-    box2.position = glm::vec3(-0.0f, 7.0f, 0.0f);
-    box2.textureId = loadPNGTexture("resources/darkgray.png");
-    box2.useNormalMapping = false;
 
     Model tire = loadUsingTinyObjLoader("resources/tire.obj");
     tire.textureId = loadPNGTexture("resources/gray.png");
@@ -247,10 +241,9 @@ int main(int argc, char* argv[]) {
     Footstep footstep1(false);
     Footstep footstep2(true);
 
-    // Terrain ground(numVerticesPerRow);
-    BarTerrain ground(heightmapSize);
+    Terrain ground(numVerticesPerRow);
+    // BarTerrain ground(heightmapSize);
     ground.scale = glm::vec3(terrainSize, 1, terrainSize);
-    // ground.scale = glm::vec3(1, 1, 1);
     ground.position = terrainOrigin;
     ground.textureId = loadPNGTexture("resources/white.png");
     ground.normalmap = loadPNGTexture("resources/normalmap2.png");
@@ -342,8 +335,8 @@ int main(int argc, char* argv[]) {
     vector<ActiveArea> activeAreas;
     activeAreas.push_back(ActiveArea(0, 0, heightmapSize, heightmapSize));
 
-    cout << "Initial volume of terrain: " << endl;
-    readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
+    // cout << "Initial volume of terrain: " << endl;
+    // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
 
     Timing timing{};
 
@@ -372,9 +365,9 @@ int main(int argc, char* argv[]) {
 
         if (isKeyPressed(GLFW_KEY_T)) {
             objectControl = (objectControl + 1) % 3;
-            cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
-            cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
-            cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
+            // cout << camera.position.x << ", " << camera.position.y <<  ", " << camera.position.z << endl;
+            // cout << camera.forward.x << ", " << camera.forward.y <<  ", " << camera.forward.z << endl;
+            // cout << camera.up.x << ", " << camera.up.y <<  ", " << camera.up.z << endl;
         }
         if (isKeyPressed(GLFW_KEY_ESCAPE)) {
             break;
@@ -386,21 +379,12 @@ int main(int argc, char* argv[]) {
             worldToCamera = glm::lookAt(fromPosition, box.position, box.up);
         } else if (objectControl == 0) {
             controlObject(camera.position, camera.forward, camera.up, dt);
-            // box.position.y = 6.2f + 1 * sin(frameCounterGlobal * 0.01f);
-            // box.position.x = 4 + 6 * cos(frameCounterGlobal * 0.01f);
-            // box.position.z = 2 + 6 * sin(frameCounterGlobal * 0.01f);
-            // box.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
         } else if (objectControl == 2) {
             controlRigidBody(car1.position, car1.forward, car1.up, carRigidBody, dt);
-            // glm::vec3 right = glm::cross(car1.up, car1.forward);
-            // glm::vec3 forward = -1.0f * car1.forward; 
-            // glm::vec3 fromPosition = car1.position - forward * 30.0f + car1.up * 27.0f;
-            // glm::vec3 fromPosition = car1.position - forward * 30.0f + right * 20.0f + car1.up * 20.0f;
             
             glm::vec3 targetPosition = car1.position;
             // glm::vec3 targetPosition = (footstep1.shoes.position + footstep2.shoes.position) / 2.0f;;
             float cameraSpeed = 10.0f * dt;
-
             glm::vec3 toCar = glm::normalize(targetPosition - camera.position);
             if (glm::length(targetPosition - camera.position) > 4) {
                 camera.position = camera.position + toCar * cameraSpeed;
@@ -412,13 +396,6 @@ int main(int argc, char* argv[]) {
         footstep1.update(dt);
         footstep2.update(dt);
 
-        // box2.rotation = glm::rotate(glm::mat4(1.0f), frameCounterGlobal * 0.081f, glm::vec3(0.0f, 1.0f, 0.0f));
-        // box2.forward = glm::rotate(box2.forward, dt * 0.9f, glm::vec3(0, 1, 0));
-
-        // tire.position.y = 6.5f;
-        // tire.position.z = -10.0f;
-        // tire.position.x += 1.0f * dt;
-        // tire.up = glm::rotate(tire.up, dt * 0.5f, glm::vec3(0, 0, -1));
         timing.end("UPDATE_OBJECTS");
 
         // Update active areas
@@ -426,9 +403,9 @@ int main(int argc, char* argv[]) {
         activeAreas.clear();
         glm::vec3 footArea = glm::vec3(3, 6, 6);
         glm::vec3 carArea = glm::vec3(6, 6, 6);
-        // setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
+        setActiveAreaForObject(terrainOrigin, terrainSize, car1.position, carArea, activeAreas);
         // setActiveAreaForObject(terrainOrigin, terrainSize, footstep1.shoes.position, footArea, activeAreas);
-        setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
+        // setActiveAreaForObject(terrainOrigin, terrainSize, box.position, box.scale, activeAreas);
         timing.end("UPDATE_ACTIVE_AREAS");
 
         // Render depth texture
@@ -437,11 +414,8 @@ int main(int argc, char* argv[]) {
         glBindFramebuffer(GL_FRAMEBUFFER, FBODepthTexture.fboId);
         glClearColor(1, 1, 1, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // box2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
-        // tire.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        // box.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
+        car1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // footstep1.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         // footstep2.render(shaderProgramDefault, worldToCameraDepth, terrainDepthProjection);
         glViewport(0, 0, windowWidth, windowHeight);
@@ -553,19 +527,10 @@ int main(int argc, char* argv[]) {
         // Render to screen
         timing.begin("RENDER_TO_SCREEN");
         // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
-        ground.render(shaderProgramBarTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
+        ground.render(shaderProgramTerrain, worldToCamera, perspective, true, intHeightmapToFloat.getTextureResult());
         // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
-        // car1.render(shaderProgramDefault, worldToCamera, perspective);
-        // car2.render(shaderProgramDefault, worldToCamera, perspective);
-        // car3.render(shaderProgramDefault, worldToCamera, perspective);
-        // car4.render(shaderProgramDefault, worldToCamera, perspective);
-        // car5.render(shaderProgramDefault, worldToCamera, perspective);
-        // car6.render(shaderProgramDefault, worldToCamera, perspective);
-        // car7.render(shaderProgramDefault, worldToCamera, perspective);
-        // car8.render(shaderProgramDefault, worldToCamera, perspective);
-        box.render(shaderProgramDefault, worldToCamera, perspective);
-        // box2.render(shaderProgramDefault, worldToCamera, perspective);
-        // tire.render(shaderProgramDefault, worldToCamera, perspective);
+        car1.render(shaderProgramDefault, worldToCamera, perspective);
+        // box.render(shaderProgramDefault, worldToCamera, perspective);
         // footstep1.render(shaderProgramDefault, worldToCamera, perspective);
         // footstep2.render(shaderProgramDefault, worldToCamera, perspective);
 
