@@ -24,6 +24,8 @@ int windowHeight;
 int windowWidth;
 int frustumHeight;
 bool useSSBO;
+bool useMultipleTargets;
+int penetrationDivider;
 bool fullscreen;
 float terrainSize; // World space size of terrain mesh.
 int numVerticesPerRow; // Resolution of terrain mesh.
@@ -45,7 +47,7 @@ int numIterationsDisplaceMaterialToContour;
 #include "animatedFootsteps.cpp"
 #include "textureOperations.cpp"
 #include "timing.cpp"
-#include "settings.hpp"
+#include "settings.cpp"
 
 using namespace std;
 
@@ -233,11 +235,6 @@ int main(int argc, char* argv[]) {
     box.textureId = loadPNGTexture("resources/blue.png");
     box.useNormalMapping = false;
 
-    Model tire = loadUsingTinyObjLoader("resources/tire.obj");
-    tire.textureId = loadPNGTexture("resources/gray.png");
-    tire.position = glm::vec3(-15.0f, 5.5f, 0);
-    tire.scale = glm::vec3(0.1f, 0.1f, 0.1f);
-
     Footstep footstep1(false);
     Footstep footstep2(true);
 
@@ -254,7 +251,7 @@ int main(int argc, char* argv[]) {
     Camera camera;
 
     // When 0 = camera, 1 = box, 2 = car
-    int objectControl = 0;
+    int objectControl = 2;
 
     float quadSize = 300;
     Quad quad;
@@ -286,6 +283,7 @@ int main(int argc, char* argv[]) {
     CalculateNormals calculateNormals = CalculateNormals(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/calculateNormals.glsl"), heightScale, heightColumnScale);
     CreateInitialHeightmapTexture createInitialHeightmapTexture = CreateInitialHeightmapTexture(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/createInitialHeightmapTexture.glsl"), TextureFormat::R32UI, frustumHeight, heightColumnScale);
     DisplaceMaterialSSBO displaceMaterialSSBO = DisplaceMaterialSSBO(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/displaceMaterialSSBO.glsl"), TextureFormat::R32I, compression);
+    DisplaceMaterialSSBOMultipleTargets displaceMaterialSSBOMultipleTargets = DisplaceMaterialSSBOMultipleTargets(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/displaceMaterialSSBOMultipleTargets.glsl"), TextureFormat::R32I, compression, penetrationDivider);
     TextureOperation moveSBBOValuesToHeightmap = TextureOperation(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/moveSBBOValuesToHeightmap.glsl"), TextureFormat::R32UI);
     EvenOutSteepSlopes evenOutSteepSlopesPart1 = EvenOutSteepSlopes(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/evenOutSteepSlopesPart1.glsl"), TextureFormat::RGBA32UI, frustumHeight, heightColumnScale, terrainSize, slopeThreshold, roughness);
     EvenOutSteepSlopes evenOutSteepSlopesPart2 = EvenOutSteepSlopes(heightmapSize, heightmapSize, createShaderProgram("shaders/basicVS.glsl", "shaders/evenOutSteepSlopesPart2.glsl"), TextureFormat::RG32UI, frustumHeight, heightColumnScale, terrainSize, slopeThreshold, roughness);
@@ -381,7 +379,6 @@ int main(int argc, char* argv[]) {
             controlObject(camera.position, camera.forward, camera.up, dt);
         } else if (objectControl == 2) {
             controlRigidBody(car1.position, car1.forward, car1.up, carRigidBody, dt);
-            
             glm::vec3 targetPosition = car1.position;
             // glm::vec3 targetPosition = (footstep1.shoes.position + footstep2.shoes.position) / 2.0f;;
             float cameraSpeed = 10.0f * dt;
@@ -442,9 +439,16 @@ int main(int argc, char* argv[]) {
         // SSBO approach
         if (useSSBO) {
             timing.begin("SSBO_MOVE_TO_CONTOUR");
-            for (unsigned i = 0; i < activeAreas.size(); i++) {
-                displaceMaterialSSBO.activeArea = activeAreas[i];
-                displaceMaterialSSBO.execute(jumpFlooding.getTextureResult(), ground.heightmap);
+            if (useMultipleTargets) {
+                for (unsigned i = 0; i < activeAreas.size(); i++) {
+                    displaceMaterialSSBOMultipleTargets.activeArea = activeAreas[i];
+                    displaceMaterialSSBOMultipleTargets.execute(jumpFlooding.getTextureResult(), ground.heightmap);
+                }
+            } else {
+                for (unsigned i = 0; i < activeAreas.size(); i++) {
+                    displaceMaterialSSBO.activeArea = activeAreas[i];
+                    displaceMaterialSSBO.execute(jumpFlooding.getTextureResult(), ground.heightmap);
+                }
             }
             timing.end("SSBO_MOVE_TO_CONTOUR");
 
@@ -556,7 +560,6 @@ int main(int argc, char* argv[]) {
 
         if (frameCounterGlobal % 20 == 0) {
             // timing.print();
-            // readBackAndAccumulatePixelValue(createInitialHeightmapTexture.fbo.fboId, heightmapSize, TextureFormat::R32UI);
         }
 
         frameCounterGlobal++;

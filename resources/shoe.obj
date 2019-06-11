@@ -1,7 +1,7 @@
 # 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
 # File Created: 03.12.2018 01:46:35
 
-mtllib Old Shoes.mtl
+# mtllib Old Shoes.mtl
 
 #
 # object Old_Shoes_Left
@@ -13837,7 +13837,7 @@ vt 0.1326 0.0493 0.0000
 
 o Old_Shoes_Left
 g Old_Shoes_Left
-usemtl wire_255255255
+# usemtl wire_255255255
 s 1
 f 1/1/1 2/2/2 3/3/3 4/4/4 
 s 2
@@ -33051,7 +33051,7 @@ vt 0.1326 0.0493 0.0000
 
 o Old_Shoes_Right
 g Old_Shoes_Right
-usemtl wire_255255255
+# usemtl wire_255255255
 s 1
 f 4326/5189/4319 4325/5188/4318 4324/5187/4317 4323/5186/4316 
 s 2

@@ -302,7 +302,6 @@ public:
     }
 };
 
-
 class DisplaceMaterialSSBO : public TextureOperation {
 public:
     float compression;
@@ -322,6 +321,27 @@ public:
     }
 };
 
+class DisplaceMaterialSSBOMultipleTargets : public TextureOperation {
+public:
+    float compression;
+    int penetrationDivider;
+
+    DisplaceMaterialSSBOMultipleTargets() {
+
+    }
+
+    DisplaceMaterialSSBOMultipleTargets(GLuint textureWidth, GLuint textureHeight, GLuint program, TextureFormat texFormat, float compression, int penetrationDivider)
+    : TextureOperation(textureWidth, textureHeight, program, texFormat) {
+        this->compression = compression;
+        this->penetrationDivider = penetrationDivider;
+    }
+
+    void bindUniforms() override {
+        glUniform1f(glGetUniformLocation(shaderProgram, "compression"), compression);
+        glUniform1i(glGetUniformLocation(shaderProgram, "penetrationDivider"), penetrationDivider);
+        TextureOperation::bindUniforms();
+    }
+};
 
 class CalculateNumNeighborsWithLessContourValue : public TextureOperation {
 public:

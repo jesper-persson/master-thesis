@@ -19,17 +19,10 @@ in mat3 TBNInFs;
 
 out vec4 colorOutFs;
 
-vec3 getNormalWeights(vec3 normal){
-	vec3 weights = abs(normal);
-	weights = normalize(max(weights, 0.00001));
-	weights /= vec3(weights.x + weights.y + weights.z);
-	return weights;
-}
-
 void main() {
     vec3 normal = normalize(normalInFS);
     vec3 normalBase = texture(normalMapMacro, texCoordInFS * vec2(1, -1)).rgb;
-    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat * 15).rgb;
+    vec3 normalDetail = texture(normalMap, texCoordInFS * normalMapRepeat).rgb;
     normalDetail = normalize(normalDetail * 2.0 - 1.0);
     normalDetail = normalize(TBNInFs * normalDetail);
     normal = normalize(normalBase);
@@ -64,12 +57,4 @@ void main() {
 
     // vec4 color = texture(texture1, texCoordInFS);
     colorOutFs = color * (intensity + specularCoefficient + ambient);
-
-    // Tri planar
-    // vec3 normalWeights = blendNormal(normalize(normalBase));
-    // vec3 xColor = texture(normalMap, fragPosWorldSpaceInFS.yz * 1).rgb;
-    // vec3 yColor = texture(normalMap, fragPosWorldSpaceInFS.xz * 1).rgb;
-    // vec3 zColor = texture(normalMap, fragPosWorldSpaceInFS.xy * 1).rgb;
-    // vec3 finalColor = (xColor * normalWeights.x + yColor * normalWeights.y + zColor * normalWeights.z);
-    // colorOutFs = vec4(finalColor, 1) * (intensity + specularCoefficient + ambient);
 }

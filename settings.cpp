@@ -12,6 +12,8 @@ extern int windowWidth;
 extern int frustumHeight;
 extern bool fullscreen;
 extern bool useSSBO;
+extern bool useMultipleTargets;
+extern int penetrationDivider;
 extern float terrainSize;
 extern int numVerticesPerRow;
 extern float compression;
@@ -60,6 +62,10 @@ void applySetting(string setting, string stringValue) {
         frustumHeight = stoi(stringValue);
     } else if (setting == "useSSBO") {
         useSSBO = parseBoolean(stringValue);
+    } else if (setting == "useMultipleTargets") {
+        useMultipleTargets = parseBoolean(stringValue);
+    } else if (setting == "penetrationDivider") {
+        penetrationDivider = stoi(stringValue);
     } else if (setting == "fullscreen") {
         fullscreen = parseBoolean(stringValue);
     } else {

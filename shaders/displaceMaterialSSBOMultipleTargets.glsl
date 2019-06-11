@@ -7,6 +7,7 @@ uniform int textureWidth;
 uniform int textureHeight;
 
 uniform float compression;
+uniform int penetrationDivider;
 
 in vec2 texCoordInFS;
 
@@ -36,9 +37,14 @@ void main() {
     vec2 dirToClosestSeed = normalize(delta);
     float lengthToClosestSeed = length(delta);
 
-    atomicAdd(data[currentSSBOIndex], heightmapValue - penetration);
-    int targetSSBOIndex = intCoordinateToSSBOIndex(cloestSeedIntCoordinate);
-    if (penetration > 0) {
+    int numDivisions = int(ceil(int(penetration) / float(penetrationDivider)));
+    if (numDivisions > 0) {
+        penetration = penetration / numDivisions;
+    }
+    atomicAdd(data[currentSSBOIndex], heightmapValue - penetration * numDivisions);
+    for (int i = 0; i < numDivisions; i++) {
+        vec2 target = cloestSeedIntCoordinate + dirToClosestSeed * (i + 1);
+        int targetSSBOIndex = intCoordinateToSSBOIndex(target);
         atomicAdd(data[targetSSBOIndex], uint(penetration * (1 - compression)));
     }
 }

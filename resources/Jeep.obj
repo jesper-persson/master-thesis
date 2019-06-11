@@ -1,7 +1,7 @@
 # 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
 # File Created: 12.02.2018 17:11:39
 
-mtllib Jeep.mtl
+# mtllib Jeep.mtl
 
 #
 # object Box095
@@ -19736,7 +19736,7 @@ vt 1.3701 0.2686 0.0000
 # 5012 texture coords
 
 g Box095
-usemtl _Jeep_909dfc5_dds
+# usemtl _Jeep_909dfc5_dds
 s 1
 f 1/1/1 2/2/2 3/3/3 
 f 3/3/3 4/4/4 1/1/1 
@@ -34162,7 +34162,7 @@ vt 0.5830 0.5039 0.0000
 # 1075 texture coords
 
 g Box093
-usemtl _Jeep_a0489c8_dds
+# usemtl _Jeep_a0489c8_dds
 s 1
 f 6070/5013/8642 6071/5014/8643 6072/5015/8644 
 f 6072/5015/8644 6073/5016/8645 6070/5013/8642 
@@ -49965,7 +49965,7 @@ vt 0.8022 0.5852 0.0000
 # 4432 texture coords
 
 g Box092
-usemtl _Jeep_dee5179_dds
+# usemtl _Jeep_dee5179_dds
 s 1
 f 7370/6088/10280 7371/6089/10281 7372/6090/10282 
 f 7372/6090/10282 7373/6091/10283 7370/6088/10280 
@@ -58445,7 +58445,7 @@ vt -0.2319 0.4829 0.0000
 # 238 texture coords
 
 g wheel2
-usemtl _Jeep_3___Default
+# usemtl _Jeep_3___Default
 s 1
 f 11485/10520/15576 11486/10521/15577 11487/10522/15578 
 f 11487/10522/15578 11488/10523/15579 11485/10520/15576 
@@ -59929,7 +59929,7 @@ vt 0.4258 0.7986 0.0000
 # 241 texture coords
 
 g wheel3
-usemtl _Jeep_3___Default
+# usemtl _Jeep_3___Default
 s 1
 f 11883/10758/16058 11884/10759/16059 11885/10760/16060 
 f 11885/10760/16060 11886/10761/16061 11883/10758/16058 
@@ -61019,7 +61019,7 @@ vt 0.4258 0.7986 0.0000
 # 241 texture coords
 
 g wheel04
-usemtl _Jeep_3___Default
+# usemtl _Jeep_3___Default
 s 1
 f 12082/10999/16299 12083/11000/16300 12084/11001/16301 
 f 12084/11001/16301 12085/11002/16302 12082/10999/16299 
@@ -62051,7 +62051,7 @@ vt 0.1213 0.2490 0.0000
 # 221 texture coords
 
 g wheel5
-usemtl _Jeep_3___Default
+# usemtl _Jeep_3___Default
 s 1
 f 12281/11240/16540 12282/11241/16541 12283/11242/16542 
 f 12283/11242/16542 12284/11243/16543 12281/11240/16540 

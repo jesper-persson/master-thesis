@@ -67,7 +67,7 @@ void main() {
             vec2 newTexCoord = neighbors[j];
             ivec4 neighbor = texture(texture1, newTexCoord);
             vec2 pointTexCoord = intCoordinateToTexCoord(neighbor.xy);
-            // neighbour.b == -2 checks for obstilce
+            // neighbour.b == -2 checks for obstacles
             if (neighbor.b == -2 || newTexCoord.x < 0 || newTexCoord.x > 1 || newTexCoord.y < 0 || newTexCoord.y > 1
                 || newTexCoord.x < minTexCoordX || newTexCoord.x > maxTexCoordX || newTexCoord.y < minTexCoordY || newTexCoord.y > maxTexCoordY
                 || pointTexCoord.x < minTexCoordX || pointTexCoord.x > maxTexCoordX || pointTexCoord.y < minTexCoordY || pointTexCoord.y > maxTexCoordY) {
